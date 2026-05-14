@@ -1,0 +1,225 @@
+.reportPaper {
+  background: #fdfdfb;
+  border-radius: 4px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  padding: 4rem;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.05);
+  color: #333;
+}
+
+.watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.02;
+  pointer-events: none;
+  color: var(--color-green);
+}
+
+.reportHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 3rem;
+}
+
+.clinicInfo {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.clinicLogo {
+  width: 60px;
+  height: 60px;
+  background: var(--color-green-dark);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.5rem;
+  border-radius: 12px;
+}
+
+.clinicInfo h3 {
+  font-size: 1.4rem;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.clinicInfo p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.crp {
+  font-weight: 700;
+  color: var(--color-green) !important;
+}
+
+.confidentialBadge {
+  background: rgba(0,0,0,0.05);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+
+.divider {
+  height: 2px;
+  background: linear-gradient(to right, var(--color-green), transparent);
+  margin-bottom: 3rem;
+  opacity: 0.3;
+}
+
+.reportSection {
+  margin-bottom: 3rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-green);
+  margin-bottom: 1.2rem;
+}
+
+.sectionHeader h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+.textBlock {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #444;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+.reportGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.detailList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.detailItem span {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.detailItem p {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.lifestyleGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.lifestyleCard {
+  background: white;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+.lifestyleCard span {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+.lifestyleCard p {
+  font-weight: 700;
+  color: var(--color-green);
+}
+
+.reportFooter {
+  margin-top: 4rem;
+  padding-top: 3rem;
+  border-top: 1px dashed rgba(0,0,0,0.1);
+  text-align: center;
+  position: relative;
+}
+
+.seal {
+  width: 50px;
+  height: 50px;
+  background: white;
+  border: 2px solid var(--color-green);
+  border-radius: 50%;
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-green);
+}
+
+.reportFooter p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 auto;
+}
+
+/* File list in PDF */
+.fileGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.fileCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: white;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 8px;
+}
+
+.fileIcon {
+  color: var(--color-green);
+}
+
+.fileName {
+  display: block;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.fileMeta {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}

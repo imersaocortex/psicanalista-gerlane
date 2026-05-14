@@ -1,0 +1,350 @@
+.page {
+  animation: fadeIn 0.8s ease;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.headerIcon {
+  width: 64px;
+  height: 64px;
+  background: white;
+  border-radius: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-green);
+  box-shadow: var(--shadow-sm);
+}
+
+.header h1 {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  color: var(--color-green-dark);
+  margin-bottom: 0.2rem;
+}
+
+.header p {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+/* Report Styling */
+.reportPaper {
+  background: #fdfdfb; /* Cor de papel levemente envelhecido/formal */
+  border-radius: 4px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05), 0 1px 4px rgba(0,0,0,0.02);
+  padding: 4rem;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.02;
+  pointer-events: none;
+  color: var(--color-green);
+}
+
+.reportHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 3rem;
+}
+
+.clinicInfo {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.clinicLogo {
+  width: 60px;
+  height: 60px;
+  background: var(--color-green-dark);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.5rem;
+  border-radius: 12px;
+  font-family: var(--font-heading);
+}
+
+.clinicInfo h3 {
+  font-size: 1.4rem;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.clinicInfo p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.crp {
+  font-weight: 700;
+  color: var(--color-green) !important;
+  margin-top: 4px;
+}
+
+.confidentialBadge {
+  background: rgba(0,0,0,0.05);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+
+.divider {
+  height: 2px;
+  background: linear-gradient(to right, var(--color-green), transparent);
+  margin-bottom: 3rem;
+  opacity: 0.3;
+}
+
+.reportSection {
+  margin-bottom: 3rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-green);
+  margin-bottom: 1.2rem;
+}
+
+.sectionHeader h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.textBlock {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #444;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+.reportGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.detailList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.detailItem span {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.detailItem p {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.lifestyleGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.lifestyleCard {
+  background: white;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+.lifestyleCard span {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+.lifestyleCard p {
+  font-weight: 700;
+  color: var(--color-green);
+}
+
+.lifestyleFooter {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+/* Estilos para Anexos no Relatório */
+.fileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.fileCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.fileCard:hover {
+  border-color: var(--color-green);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  background: rgba(116, 159, 130, 0.02);
+}
+
+.fileIcon {
+  width: 48px;
+  height: 48px;
+  background: rgba(116, 159, 130, 0.1);
+  color: var(--color-green);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fileDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.fileName {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileMeta {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.downloadIcon {
+  color: var(--text-muted);
+  opacity: 0.5;
+  transition: all 0.2s;
+}
+
+.fileCard:hover .downloadIcon {
+  color: var(--color-green);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.reportFooter {
+  margin-top: 4rem;
+  padding-top: 3rem;
+  border-top: 1px dashed rgba(0,0,0,0.1);
+  text-align: center;
+  position: relative;
+}
+
+.seal {
+  width: 60px;
+  height: 60px;
+  background: white;
+  border: 2px solid var(--color-green);
+  border-radius: 50%;
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-green);
+}
+
+.reportFooter p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.emptyContainer {
+  text-align: center;
+  padding: 100px 20px;
+  background: white;
+  border-radius: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.emptyIcon {
+  color: var(--color-green);
+  margin-bottom: 2rem;
+  opacity: 0.3;
+}
+
+.subText {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .reportPaper { padding: 2rem; }
+  .reportHeader { flex-direction: column; gap: 1.5rem; }
+  .reportGrid { grid-template-columns: 1fr; }
+  .lifestyleGrid { grid-template-columns: 1fr; }
+}

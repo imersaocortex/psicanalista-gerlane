@@ -1,0 +1,247 @@
+.header {
+  height: 70px;
+  background: white;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.leftGroup {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.mobileLogo {
+  display: none;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-secondary);
+  padding: 8px 16px;
+  border-radius: 12px;
+  width: 300px;
+  transition: all 0.3s;
+  border: 1px solid transparent;
+}
+
+.search:focus-within {
+  background: white;
+  border-color: var(--color-green);
+  box-shadow: 0 0 0 4px rgba(45, 106, 79, 0.05);
+}
+
+.searchInput {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.notifWrapper {
+  position: relative;
+}
+
+.notification {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.notification:hover {
+  background: var(--bg-secondary);
+  color: var(--color-green);
+}
+
+.badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: #e74c3c;
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+.notifDropdown {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  width: 320px;
+  background: white;
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+  animation: slideDown 0.3s ease;
+}
+
+.notifHeader {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+}
+
+.notifHeader h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.notifList {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notifItem {
+  padding: 1rem 1.5rem;
+  display: flex;
+  gap: 12px;
+  transition: background 0.2s;
+  cursor: pointer;
+  border-bottom: 1px solid var(--bg-secondary);
+}
+
+.notifItem:hover { background: var(--bg-secondary); }
+.notifItem.unread { background: rgba(45, 106, 79, 0.02); }
+
+.notifDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-green);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.notifContent { flex: 1; }
+.notifTitle { font-size: 0.85rem; font-weight: 700; margin-bottom: 2px; }
+.notifText { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+.notifDate { font-size: 0.7rem; color: var(--text-muted); display: block; margin-top: 4px; }
+
+.emptyNotifs {
+  padding: 2rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border-light);
+  margin: 0 8px;
+}
+
+.userAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg-secondary);
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.userText {
+  display: flex;
+  flex-direction: column;
+}
+
+.userName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.userStatus {
+  font-size: 0.7rem;
+  color: var(--color-green);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.logoutBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.logoutBtn:hover {
+  background: #fff5f5;
+  color: #e74c3c;
+}
+
+.menuBtn {
+  display: none;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .header { padding: 0 1rem; }
+  .search { display: none; }
+  .mobileLogo { display: block; }
+  .mobileLogo img { height: 32px; }
+  .userText { display: none; }
+  .menuBtn { display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--text-primary); cursor: pointer; }
+}

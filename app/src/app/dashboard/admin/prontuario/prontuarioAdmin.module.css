@@ -1,0 +1,138 @@
+.page {
+  animation: fadeIn 0.6s ease;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.header h1 {
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
+  color: var(--color-green-dark);
+}
+
+.subtitle {
+  color: var(--text-muted);
+}
+
+.selector {
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.selector label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.selectWrapper {
+  width: 300px;
+}
+
+.select {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: white;
+  font-size: var(--text-sm);
+  outline: none;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.select:focus {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 10px rgba(197, 165, 90, 0.1);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 24px;
+}
+
+.card {
+  background: white;
+  padding: 32px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-md);
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--bg-secondary);
+  padding-bottom: 12px;
+}
+
+.cardTitle h3 {
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+}
+
+.icon { font-size: 24px; }
+
+.fieldList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field label {
+  font-size: 9px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.field p {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.textarea {
+  width: 100%;
+  padding: 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+  transition: all var(--transition-base);
+}
+
+.textarea:focus {
+  background: white;
+  border-color: var(--color-gold);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

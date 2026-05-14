@@ -1,0 +1,29 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.mainWrapper {
+  flex: 1;
+  margin-left: 260px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  padding: 32px;
+  flex: 1;
+}
+
+@media (max-width: 1024px) {
+  .mainWrapper {
+    margin-left: 0;
+  }
+  
+  .content {
+    padding: 20px;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* Espaço para o BottomNav */
+  }
+}

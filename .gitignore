@@ -1,0 +1,26 @@
+# Node
+node_modules/
+.next/
+out/
+build/
+
+# Env (NUNCA subir credenciais!)
+.env
+.env.local
+.env.production.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel
+
+# Misc
+*.pem
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Gemini/Antigravity
+.gemini/

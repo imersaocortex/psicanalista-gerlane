@@ -1,0 +1,291 @@
+.page {
+  animation: fadeIn 0.6s ease;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.header h1 {
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
+  color: var(--color-green-dark);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+}
+
+.calendarWrap {
+  background: white;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  padding: 32px;
+  box-shadow: var(--shadow-lg);
+}
+
+.calHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.calHeader h2 {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+}
+
+.navBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.navBtn:hover {
+  background: var(--color-green);
+  color: white;
+  border-color: var(--color-green);
+  box-shadow: var(--glow-green);
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.weekday {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.dayCell {
+  aspect-ratio: 1;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.dayCell:not(.empty):hover {
+  background: white;
+  border-color: var(--color-gold);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
+  z-index: 1;
+}
+
+.today {
+  border: 2px solid var(--color-green);
+  background: rgba(45, 106, 79, 0.05);
+}
+
+.dayCell.selected {
+  border-color: var(--color-green);
+  background: white;
+  box-shadow: 0 0 0 2px var(--color-green);
+  transform: scale(1.05);
+  z-index: 2;
+}
+
+.dayNum {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.dots {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.sessionDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.more {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.empty {
+  background: transparent;
+  pointer-events: none;
+}
+
+.sidePanel {
+  background: white;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  padding: 32px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+}
+
+.panelHeader {
+  margin-bottom: 24px;
+}
+
+.panelHeader h3 {
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+}
+
+.dateLabel {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.todayList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.todaySession {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.todaySession:hover {
+  background: white;
+  border-color: var(--color-gold);
+  box-shadow: var(--shadow-sm);
+}
+
+.tsMainInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.tsTime {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--color-green);
+  font-size: var(--text-sm);
+}
+
+.tsInfo p {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.tsType {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.tsBadge {
+  margin-left: auto;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+
+.tsActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-light);
+  width: 100%;
+}
+
+.tsActions button {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-muted);
+}
+
+.confirmBtn:hover {
+  background: rgba(46, 204, 113, 0.1);
+  color: #2ecc71;
+  border-color: #2ecc71;
+}
+
+.completeBtn:hover {
+  background: rgba(52, 152, 219, 0.1);
+  color: #3498db;
+  border-color: #3498db;
+}
+
+.cancelBtn:hover {
+  background: rgba(230, 126, 34, 0.1);
+  color: #e67e22;
+  border-color: #e67e22;
+}
+
+.deleteBtn:hover {
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+  border-color: #e74c3c;
+}
+
+.emptyMsg {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-style: italic;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

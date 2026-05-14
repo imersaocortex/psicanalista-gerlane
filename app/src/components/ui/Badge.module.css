@@ -1,0 +1,18 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+.sm { padding: 2px 8px; font-size: var(--text-xs); }
+.md { padding: 4px 12px; font-size: var(--text-sm); }
+
+.default { background: var(--color-beige); color: var(--text-secondary); }
+.success { background: var(--color-success-light); color: var(--color-success); }
+.warning { background: var(--color-warning-light); color: var(--color-warning); }
+.error { background: var(--color-error-light); color: var(--color-error); }
+.info { background: var(--color-info-light); color: var(--color-info); }
+.terracotta { background: rgba(196,112,74,0.12); color: var(--color-terracotta); }

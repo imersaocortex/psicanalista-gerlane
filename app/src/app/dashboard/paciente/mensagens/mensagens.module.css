@@ -1,0 +1,214 @@
+.page {
+  animation: fadeIn 0.6s ease;
+  height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
+  color: var(--color-green-dark);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chatContainer {
+  flex: 1;
+  background: white;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(27, 67, 50, 0.05);
+}
+
+.chatHeader {
+  padding: 16px 24px;
+  background: white;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chatHeaderInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.chatAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-green);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: var(--text-lg);
+  box-shadow: 0 4px 10px rgba(45, 106, 79, 0.2);
+}
+
+.chatInfo h4 {
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.onlineStatus {
+  font-size: 11px;
+  color: var(--color-success);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chatMessages {
+  flex: 1;
+  padding: 32px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #fdfaf5;
+  background-image: radial-gradient(var(--border-light) 0.5px, transparent 0.5px);
+  background-size: 20px 20px; /* Sutil padrão de pontos */
+}
+
+.message {
+  display: flex;
+  width: 100%;
+}
+
+.sent {
+  justify-content: flex-end;
+}
+
+.received {
+  justify-content: flex-start;
+}
+
+.bubble {
+  max-width: 60%;
+  padding: 14px 20px;
+  border-radius: 20px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  line-height: 1.6;
+}
+
+.sent .bubble {
+  background: var(--color-green);
+  color: white !important;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 8px 20px rgba(45, 106, 79, 0.15);
+}
+
+.sent .bubble p {
+  color: white !important;
+}
+
+.received .bubble {
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  border-bottom-left-radius: 4px;
+}
+
+.bubble p {
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+.messageTime {
+  font-size: 10px;
+  margin-top: 6px;
+  display: block;
+  text-align: right;
+  opacity: 0.7;
+}
+
+.sent .messageTime {
+  color: rgba(255,255,255,0.8);
+}
+
+.chatInputArea {
+  padding: 24px;
+  background: white;
+  border-top: 1px solid var(--border-light);
+}
+
+.chatInputWrapper {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-full);
+  padding: 6px 6px 6px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid transparent;
+  transition: all var(--transition-base);
+}
+
+.chatInputWrapper:focus-within {
+  background: white;
+  border-color: var(--color-green);
+  box-shadow: 0 0 20px rgba(45, 106, 79, 0.08);
+}
+
+.input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 10px 0;
+  font-size: var(--text-sm);
+  outline: none;
+  color: var(--text-primary);
+}
+
+.sendBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-green);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+  box-shadow: 0 4px 10px rgba(45, 106, 79, 0.2);
+}
+
+.sendBtn:hover {
+  transform: scale(1.08) rotate(-5deg);
+  background: var(--color-green-dark);
+  box-shadow: 0 6px 15px rgba(45, 106, 79, 0.3);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 768px) {
+  .page {
+    height: calc(100vh - 80px);
+    margin: -20px; /* Anular padding do content wrapper para ser edge-to-edge */
+  }
+  .header { display: none; } /* Esconder título repetitivo no mobile */
+  .chatContainer { border-radius: 0; border: none; }
+  .chatHeader { padding: 12px 16px; }
+  .chatMessages { padding: 16px; gap: 12px; }
+  .bubble { max-width: 85%; padding: 12px 16px; }
+  .chatInputArea { padding: 12px 16px; }
+}
