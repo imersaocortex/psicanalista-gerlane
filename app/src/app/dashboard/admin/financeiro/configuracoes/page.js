@@ -58,7 +58,7 @@ export default function FinanceiroConfigPage() {
           .upsert({
             admin_id: user.id,
             chave,
-            valor,
+            valor: JSON.stringify(valor),
             updated_at: new Date().toISOString()
           }, { onConflict: 'admin_id, chave' });
         

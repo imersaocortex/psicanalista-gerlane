@@ -52,16 +52,16 @@ export default function ConfiguracoesAdminPage() {
     if (!user) return;
     setSaving(true);
     try {
-      // Como o valor é de tipo JSON no banco, salvamos o valor formatado em JSON
       const entries = Object.entries(configs);
       
       for (const [chave, valor] of entries) {
+        // Garantir serialização em JSON válida para colunas JSON/JSONB do Supabase
         const { error } = await supabase
           .from('configuracoes_sistema')
           .upsert({
             admin_id: user.id,
             chave,
-            valor,
+            valor: JSON.stringify(valor),
             updated_at: new Date().toISOString()
           }, { onConflict: 'admin_id, chave' });
 
