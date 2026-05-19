@@ -55,18 +55,18 @@ export default function PacientePlanos() {
     fetchPlans();
   }, [user]);
 
-  const handlePlanChange = async (planId, planName, planPrice) => {
-    if (planId === currentPlanId) return;
+  const handlePlanChange = async (plan) => {
+    if (plan.id === currentPlanId) return;
     
-    setChanging(planId);
+    setChanging(plan.id);
     try {
       // 1. Criar um registro de pagamento para o novo plano
       const { data: payment, error: payError } = await supabase
         .from('pagamentos')
         .insert({
           paciente_id: patientId,
-          valor: planPrice,
-          tipo_plano: planName,
+          valor: plan.preco,
+          tipo_plano: plan.periodicidade, // Envia a periodicidade (ex: 'mensal') para respeitar a constraint
           status: 'pendente',
           data: new Date().toISOString()
         })
@@ -151,7 +151,7 @@ export default function PacientePlanos() {
                 </Button>
               ) : (
                 <Button 
-                  onClick={() => handlePlanChange(plan.id, plan.nome, plan.preco)} 
+                  onClick={() => handlePlanChange(plan)} 
                   disabled={changing === plan.id}
                   style={{ width: '100%' }}
                 >
