@@ -141,7 +141,7 @@ export default function NovoPacientePage() {
             .insert({
               paciente_id: newPatient.id,
               valor: selectedPlan.preco,
-              tipo_plano: selectedPlan.nome,
+              tipo_plano: selectedPlan.periodicidade || 'avulso',
               status: formData.status_pagamento,
               data: new Date().toISOString()
             });
