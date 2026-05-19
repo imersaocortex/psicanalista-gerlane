@@ -105,11 +105,10 @@ export default function NovoPacientePage() {
 
       const userId = authDataResponse.user.id;
 
-      // 3. Create patient record
+      // 3. Update patient record (a trigger already creates the initial blank row)
       const { error: patientError } = await supabase
         .from('pacientes')
-        .insert({
-          user_id: userId,
+        .update({
           telefone: formData.telefone,
           data_nascimento: formData.data_nascimento,
           genero: formData.genero,
@@ -120,7 +119,8 @@ export default function NovoPacientePage() {
           foto_url,
           plano_id: formData.plano_id,
           cpf: formData.cpf
-        });
+        })
+        .eq('user_id', userId);
 
       if (patientError) throw patientError;
       
@@ -131,6 +131,7 @@ export default function NovoPacientePage() {
           .from('pacientes')
           .select('id')
           .eq('user_id', userId)
+          .limit(1)
           .single();
 
         if (newPatient) {
