@@ -38,7 +38,7 @@ export default function AdminDashboard() {
           supabase.from('sessoes').select('*', { count: 'exact', head: true }).eq('status', 'concluida'),
           supabase.from('pagamentos').select('*'),
           supabase.from('sessoes')
-            .select('*')
+            .select('*, pacientes(id, profiles:user_id(nome))')
             .gte('data', new Date().toISOString())
             .order('data', { ascending: true })
             .limit(5)
@@ -204,7 +204,7 @@ export default function AdminDashboard() {
                   <span className={styles.dateStr}>{new Date(session.data).toLocaleDateString('pt-BR', {day: '2-digit', month: 'short'})}</span>
                 </div>
                 <div className={styles.sessionPatient}>
-                  <h4>Paciente #{session.paciente_id?.slice(0, 5)}</h4>
+                  <h4>{session.pacientes?.profiles?.nome || `Paciente #${session.paciente_id?.slice(0, 5)}`}</h4>
                   <p>Sessão de Psicanálise • 50 min</p>
                 </div>
                 <div className={styles.sessionActions}>
@@ -216,7 +216,7 @@ export default function AdminDashboard() {
                   )}
                   <button onClick={() => handleDelete(session.id)} title="Excluir" className={styles.actionBtnIcon}><Trash2 size={14} /></button>
                 </div>
-                <Link href={`/dashboard/admin/pacientes/${session.pacientes?.id}`} className={styles.sessionArrow}>
+                <Link href={`/dashboard/admin/pacientes/${session.paciente_id}`} className={styles.sessionArrow}>
                   <ChevronRight size={18} />
                 </Link>
               </div>
