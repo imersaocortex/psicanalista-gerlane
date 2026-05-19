@@ -1,12 +1,14 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import styles from './configuracoes.module.css';
 import Button from '@/components/ui/Button';
 import { Settings, MessageSquare, CreditCard, Save } from 'lucide-react';
 
 export default function ConfiguracoesAdminPage() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { addToast } = useToast();
@@ -21,8 +23,13 @@ export default function ConfiguracoesAdminPage() {
   });
 
   useEffect(() => {
+    if (!user) return;
     async function fetchConfigs() {
-      const { data, error } = await supabase.from('configuracoes_sistema').select('*');
+      const { data, error } = await supabase
+        .from('configuracoes_sistema')
+        .select('*')
+        .eq('admin_id', user.id);
+      
       if (data) {
         const configMap = {};
         data.forEach(item => {
@@ -33,7 +40,7 @@ export default function ConfiguracoesAdminPage() {
       setLoading(false);
     }
     fetchConfigs();
-  }, []);
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,18 +49,25 @@ export default function ConfiguracoesAdminPage() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!user) return;
     setSaving(true);
     try {
-      const updates = Object.keys(configs).map(key => ({
-        chave: key,
-        valor: configs[key]
-      }));
+      // Como o valor é de tipo JSON no banco, salvamos o valor formatado em JSON
+      const entries = Object.entries(configs);
+      
+      for (const [chave, valor] of entries) {
+        const { error } = await supabase
+          .from('configuracoes_sistema')
+          .upsert({
+            admin_id: user.id,
+            chave,
+            valor,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'admin_id, chave' });
 
-      const { error } = await supabase
-        .from('configuracoes_sistema')
-        .upsert(updates, { onConflict: 'chave' });
+        if (error) throw error;
+      }
 
-      if (error) throw error;
       addToast('Configurações salvas com sucesso!', 'success');
     } catch (error) {
       addToast('Erro ao salvar configurações.', 'error');
