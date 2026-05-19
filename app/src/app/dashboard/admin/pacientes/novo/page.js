@@ -86,25 +86,30 @@ export default function NovoPacientePage() {
         foto_url = publicUrl;
       }
 
-      // 2. Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.senha || 'paciente123',
-        options: {
-          data: {
-            nome: formData.nome,
-            tipo: 'paciente'
-          }
-        }
+      // 2. Create auth user via our new API to avoid session takeover
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.senha || 'paciente123',
+          nome: formData.nome
+        })
       });
 
-      if (authError) throw authError;
+      const authDataResponse = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(authDataResponse.error || 'Erro ao criar o login do paciente');
+      }
+
+      const userId = authDataResponse.user.id;
 
       // 3. Create patient record
       const { error: patientError } = await supabase
         .from('pacientes')
         .insert({
-          user_id: authData.user.id,
+          user_id: userId,
           telefone: formData.telefone,
           data_nascimento: formData.data_nascimento,
           genero: formData.genero,
@@ -125,7 +130,7 @@ export default function NovoPacientePage() {
         const { data: newPatient } = await supabase
           .from('pacientes')
           .select('id')
-          .eq('user_id', authData.user.id)
+          .eq('user_id', userId)
           .single();
 
         if (newPatient) {

@@ -28,15 +28,19 @@ const adminBottomItems = [
 ];
 
 export default function AdminLayout({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push('/login');
+    if (!loading) {
+      if (!isAuthenticated) {
+        router.push('/login');
+      } else if (user?.tipo !== 'admin') {
+        router.push('/dashboard/paciente');
+      }
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isAuthenticated, user, loading, router]);
 
   if (loading) return (
     <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>

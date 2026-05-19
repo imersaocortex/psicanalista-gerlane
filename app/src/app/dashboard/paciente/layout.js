@@ -22,10 +22,14 @@ export default function PacienteLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push('/login');
+    if (!loading) {
+      if (!isAuthenticated) {
+        router.push('/login');
+      } else if (user?.tipo !== 'paciente') {
+        router.push('/dashboard/admin');
+      }
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isAuthenticated, user, loading, router]);
 
   if (loading) return (
     <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
