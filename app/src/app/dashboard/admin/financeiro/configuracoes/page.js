@@ -60,7 +60,7 @@ export default function FinanceiroConfigPage() {
             chave,
             valor: JSON.stringify(valor),
             updated_at: new Date().toISOString()
-          }, { onConflict: 'admin_id, chave' });
+          }, { onConflict: 'chave' });
         
         if (error) throw error;
       }
