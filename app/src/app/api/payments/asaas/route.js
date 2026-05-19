@@ -43,7 +43,15 @@ export async function POST(request) {
       .select('chave, valor');
     
     const configMap = {};
-    configs?.forEach(c => configMap[c.chave] = c.valor);
+    configs?.forEach(c => {
+      let val = c.valor;
+      try {
+        if (typeof val === 'string' && (val.startsWith('"') || val.startsWith('{') || val.startsWith('['))) {
+          val = JSON.parse(val);
+        }
+      } catch (e) {}
+      configMap[c.chave] = val;
+    });
 
     const asaasKey = configMap.asaas_api_key;
     const isSandbox = configMap.asaas_environment === 'sandbox';
@@ -125,40 +133,76 @@ export async function POST(request) {
       console.log('[Asaas] Customer update response:', JSON.stringify(updateResult, null, 2));
     }
 
-    // 4. Criar Cobrança
-    const paymentBody = {
-      customer: customerId,
-      billingType: 'UNDEFINED', // Permite que o cliente escolha no checkout do Asaas
-      value: payment.valor,
-      dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0], // 1 dia de vencimento
-      description: `Pagamento ${payment.tipo_plano} - Clínica Psicanálise`,
-      externalReference: payment.id,
-      callbackUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard/paciente/pagamentos?success=true`,
-    };
+    // 4. Decidir se cria Cobrança Única ou Assinatura Recorrente
+    const isPlanRecurring = ['mensal', 'trimestral', 'semestral', 'anual'].includes(payment.tipo_plano);
+    
+    let asaasPayment;
+    const dueDateStr = new Date(Date.now() + 86400000).toISOString().split('T')[0]; // 1 dia de vencimento
 
-    console.log('[Asaas] Creating payment with body:', JSON.stringify(paymentBody, null, 2));
+    if (isPlanRecurring) {
+      const cycleMap = {
+        mensal: 'MONTHLY',
+        trimestral: 'QUARTERLY',
+        semestral: 'SEMIANNUALLY',
+        anual: 'YEARLY'
+      };
 
-    const paymentResponse = await fetch(`${asaasUrl}/payments`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(paymentBody)
-    });
+      const subscriptionBody = {
+        customer: customerId,
+        billingType: 'UNDEFINED', // Permite escolher Pix/Cartão/Boleto no checkout
+        value: payment.valor,
+        nextDueDate: dueDateStr,
+        cycle: cycleMap[payment.tipo_plano] || 'MONTHLY',
+        description: `Assinatura Recorrente (${payment.tipo_plano}) - Clínica Psicanálise`,
+        externalReference: payment.id,
+        callbackUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard/paciente/pagamentos?success=true`,
+      };
 
-    const asaasPayment = await paymentResponse.json();
-    console.log('[Asaas] Payment response:', JSON.stringify(asaasPayment, null, 2));
+      console.log('[Asaas] Creating subscription with body:', JSON.stringify(subscriptionBody, null, 2));
+
+      const subscriptionResponse = await fetch(`${asaasUrl}/subscriptions`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(subscriptionBody)
+      });
+
+      asaasPayment = await subscriptionResponse.json();
+    } else {
+      const paymentBody = {
+        customer: customerId,
+        billingType: 'UNDEFINED',
+        value: payment.valor,
+        dueDate: dueDateStr,
+        description: `Pagamento ${payment.tipo_plano} - Clínica Psicanálise`,
+        externalReference: payment.id,
+        callbackUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard/paciente/pagamentos?success=true`,
+      };
+
+      console.log('[Asaas] Creating single payment with body:', JSON.stringify(paymentBody, null, 2));
+
+      const paymentResponse = await fetch(`${asaasUrl}/payments`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(paymentBody)
+      });
+
+      asaasPayment = await paymentResponse.json();
+    }
+
+    console.log('[Asaas] Response:', JSON.stringify(asaasPayment, null, 2));
 
     if (asaasPayment.errors) {
-      console.error('[Asaas] Payment creation error:', JSON.stringify(asaasPayment.errors, null, 2));
+      console.error('[Asaas] Creation error:', JSON.stringify(asaasPayment.errors, null, 2));
       const errorMsg = asaasPayment.errors.map(e => e.description).join('; ');
       return NextResponse.json({ error: errorMsg || 'Erro ao gerar cobrança', details: asaasPayment.errors }, { status: 400 });
     }
 
-    // 5. Atualizar o pagamento no Supabase com o link/ID do Asaas (opcional)
+    // 5. Atualizar o pagamento no Supabase com o ID do Asaas
     await supabase
       .from('pagamentos')
       .update({ 
         gateway_id: asaasPayment.id,
-        status: 'processando' // ou manter pendente até o webhook
+        status: 'processando'
       })
       .eq('id', payment.id);
 

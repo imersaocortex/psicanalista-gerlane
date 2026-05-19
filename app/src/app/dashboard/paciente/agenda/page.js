@@ -156,6 +156,18 @@ export default function AgendaPage() {
       console.log(`[Session Limit Validation] Month: ${monthNames[reqMonth]}, Limit: ${limit}, Scheduled: ${monthSessionsCount}`);
 
       if (monthSessionsCount >= limit) {
+        // Disparar notificação e mensagem de WhatsApp via Evolution API alertando o paciente
+        fetch('/api/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            title: 'Limite de Sessões Atingido ⚠️',
+            message: `Você tentou agendar uma sessão para o dia ${sessionDate.toLocaleDateString('pt-BR')} às ${selectedTime}, mas atingiu o limite de ${limit} sessões contratadas para este mês (${monthNames[reqMonth]}). Caso queira agendar mais sessões, fale com a Dra. Gerlane para adquirir uma sessão avulsa ou faça o upgrade do seu plano.`,
+            link: '/dashboard/paciente/planos'
+          })
+        }).catch(err => console.error('[Session Limit WhatsApp Alert Error]', err));
+
         throw new Error(`Você atingiu o limite de ${limit} sessões para este mês (${monthNames[reqMonth]}). Atualmente você possui ${monthSessionsCount} sessões ativas. Para agendar mais, adquira uma sessão avulsa ou faça o upgrade do seu plano.`);
       }
 
