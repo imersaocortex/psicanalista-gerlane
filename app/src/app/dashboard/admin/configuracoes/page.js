@@ -70,8 +70,9 @@ export default function ConfiguracoesAdminPage() {
 
       addToast('Configurações salvas com sucesso!', 'success');
     } catch (error) {
-      addToast('Erro ao salvar configurações.', 'error');
-      console.error(error);
+      const errMsg = error.message || error.details || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+      addToast(`Erro ao salvar: ${errMsg}`, 'error');
+      console.error('[ConfiguracoesAdmin] Full Error Object:', error);
     } finally {
       setSaving(false);
     }
