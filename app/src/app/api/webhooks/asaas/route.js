@@ -1,15 +1,32 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const supabase = await createClient();
+    // 1. Validar e usar a Chave Mestra para ignorar regras do banco de dados (RLS)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error('[Asaas Webhook] ERROR: SUPABASE_SERVICE_ROLE_KEY is not defined.');
+      // O ideal é retornar 500 para o Asaas tentar novamente mais tarde
+      return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+    }
+
+    // Criar cliente que ignora RLS (Segurança a Nível de Linha)
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
     const body = await request.json();
     const { event, payment } = body;
 
-    console.log(`[Asaas Webhook] Event received: ${event}`, payment.id);
+    console.log(`[Asaas Webhook] Event received: ${event}`, payment?.id);
 
-    // 1. Verificar se é um evento de confirmação de pagamento
+    // 2. Verificar se é um evento de confirmação de pagamento
     if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
       const externalReference = payment.externalReference; // Este é o ID do pagamento no nosso Supabase
 
@@ -17,10 +34,10 @@ export async function POST(request) {
         return NextResponse.json({ message: 'No external reference found' }, { status: 200 });
       }
 
-      // 2. Buscar o pagamento no Supabase
+      // 3. Buscar o pagamento no Supabase
       const { data: localPayment, error: fetchError } = await supabase
         .from('pagamentos')
-        .select('*, pacientes(id, plano_id)')
+        .select('*, pacientes(id, user_id, plano_id)')
         .eq('id', externalReference)
         .single();
 
@@ -29,7 +46,7 @@ export async function POST(request) {
         return NextResponse.json({ message: 'Payment not found' }, { status: 200 });
       }
 
-      // 3. Atualizar o status do pagamento para 'pago'
+      // 4. Atualizar o status do pagamento para 'pago'
       const { error: updateError } = await supabase
         .from('pagamentos')
         .update({ status: 'pago' })
@@ -37,15 +54,15 @@ export async function POST(request) {
 
       if (updateError) throw updateError;
 
-      // 4. Lógica de Atualização de Plano (Upgrade/Downgrade)
-      // Se o pagamento for do tipo "Plano X", atualizamos o plano do paciente
-      if (localPayment.tipo_plano) {
-        // Buscar o ID do plano pelo nome (ou poderíamos ter guardado o ID no pagamento)
+      // 5. Lógica de Atualização de Plano (Upgrade/Downgrade)
+      if (localPayment.tipo_plano && localPayment.tipo_plano !== 'avulso') {
+        // Buscar o ID do plano pela periodicidade
         const { data: planData } = await supabase
           .from('planos')
           .select('id')
-          .eq('nome', localPayment.tipo_plano)
-          .single();
+          .eq('periodicidade', localPayment.tipo_plano)
+          .limit(1)
+          .maybeSingle();
 
         if (planData) {
           const { error: patientUpdateError } = await supabase
@@ -57,19 +74,26 @@ export async function POST(request) {
         }
       }
 
-      // 5. Criar uma notificação para o paciente
-      await supabase.from('notificacoes').insert({
-        user_id: localPayment.pacientes.user_id || localPayment.paciente_id, // Idealmente o user_id
-        titulo: 'Pagamento Confirmado! 🎉',
-        mensagem: `Seu pagamento no valor de R$ ${localPayment.valor} foi processado com sucesso. Seu plano foi atualizado.`,
-        lida: false
-      });
+      // 6. Criar uma notificação para o paciente
+      const notificationUserId = localPayment.pacientes?.user_id;
+      
+      if (notificationUserId) {
+        await supabase.from('notificacoes').insert({
+          user_id: notificationUserId,
+          titulo: 'Pagamento Confirmado! 🎉',
+          mensagem: `Seu pagamento no valor de R$ ${localPayment.valor} foi processado com sucesso. Seu plano está ativo.`,
+          lida: false
+        });
+      }
 
+      console.log(`[Asaas Webhook] Payment ${externalReference} successfully updated to PAGO.`);
       return NextResponse.json({ message: 'Success' }, { status: 200 });
     }
 
     // Outros eventos (vencimento, falha, etc)
     if (event === 'PAYMENT_OVERDUE') {
+        if (!payment.externalReference) return NextResponse.json({ message: 'No external reference' }, { status: 200 });
+        
         const { error: updateError } = await supabase
             .from('pagamentos')
             .update({ status: 'vencido' })
