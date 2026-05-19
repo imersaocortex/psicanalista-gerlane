@@ -81,6 +81,17 @@ export default function Header({ onMenuClick }) {
     setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
   };
 
+  const clearAllNotifications = async () => {
+    await supabase
+      .from('notificacoes')
+      .delete()
+      .eq('user_id', user.id);
+    
+    setNotifications([]);
+    setUnreadCount(0);
+    setShowNotifs(false);
+  };
+
   const handleNotifClick = async (n) => {
     setShowNotifs(false);
     if (n.link) {
@@ -124,8 +135,13 @@ export default function Header({ onMenuClick }) {
 
           {showNotifs && (
             <div className={styles.notifDropdown}>
-              <div className={styles.notifHeader}>
-                <h4>Notificações</h4>
+              <div className={styles.notifHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h4 style={{ margin: 0 }}>Notificações</h4>
+                {notifications.length > 0 && (
+                  <button onClick={clearAllNotifications} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontSize: '0.8rem', cursor: 'pointer', padding: 0 }}>
+                    Limpar todas
+                  </button>
+                )}
               </div>
               <div className={styles.notifList}>
                 {notifications.length > 0 ? notifications.map(n => (

@@ -30,7 +30,7 @@ export default function AdminAgendaPage() {
 
       const { data, error } = await supabase
         .from('sessoes')
-        .select('*, pacientes(profiles(nome))')
+        .select('*, pacientes(user_id, profiles(nome))')
         .gte('data', startOfMonth)
         .lte('data', endOfMonth);
 
@@ -53,6 +53,31 @@ export default function AdminAgendaPage() {
         .eq('id', sessionId);
 
       if (error) throw error;
+
+      const session = sessions.find(s => s.id === sessionId);
+      if (session) {
+        const patientUserId = session.pacientes?.user_id;
+        const patientName = session.pacientes?.profiles?.nome || 'Paciente';
+        const sessionDateFormatted = new Date(session.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + 'h';
+
+        if (patientUserId && (newStatus === 'confirmada' || newStatus === 'cancelada')) {
+          const title = newStatus === 'confirmada' ? 'Sessão Confirmada! 📅' : 'Sessão Cancelada ❌';
+          const message = newStatus === 'confirmada' 
+            ? `Olá ${patientName}, sua sessão com a Dra. Gerlane no dia ${sessionDateFormatted} foi confirmada.`
+            : `Olá ${patientName}, sua sessão com a Dra. Gerlane no dia ${sessionDateFormatted} foi cancelada.`;
+          
+          fetch('/api/notifications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: patientUserId,
+              title,
+              message,
+              link: '/dashboard/paciente/agenda'
+            })
+          }).catch(err => console.error('Error sending notification:', err));
+        }
+      }
 
       setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, status: newStatus } : s));
       addToast(`Sessão ${newStatus === 'concluida' ? 'concluída' : 'atualizada'} com sucesso!`, 'success');

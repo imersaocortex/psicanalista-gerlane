@@ -121,7 +121,7 @@ export default function AgendaPage() {
     try {
       const { data: patient, error: patientError } = await supabase
         .from('pacientes')
-        .select('id')
+        .select('id, planos(nome, limite_sessoes)')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -133,6 +133,27 @@ export default function AgendaPage() {
       const sessionDate = new Date(selectedDate);
       const [hours, minutes] = selectedTime.split(':');
       sessionDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+      // Validação do Limite de Sessões no mês correspondente
+      const reqYear = sessionDate.getFullYear();
+      const reqMonth = sessionDate.getMonth();
+      const reqStartOfMonth = new Date(reqYear, reqMonth, 1).toISOString();
+      const reqEndOfMonth = new Date(reqYear, reqMonth + 1, 0, 23, 59, 59).toISOString();
+
+      const { count: monthSessionsCount, error: countError } = await supabase
+        .from('sessoes')
+        .select('*', { count: 'exact', head: true })
+        .eq('paciente_id', patient.id)
+        .gte('data', reqStartOfMonth)
+        .lte('data', reqEndOfMonth)
+        .neq('status', 'cancelada');
+
+      if (countError) throw countError;
+
+      const limit = patient.planos?.limite_sessoes || 4; // Padrão de 4 se não houver plano configurado
+      if (monthSessionsCount >= limit) {
+        throw new Error(`Você atingiu o limite de ${limit} sessões para este mês (${monthNames[reqMonth]}). Para agendar mais, adquira uma sessão avulsa ou faça o upgrade do seu plano.`);
+      }
 
       const { error } = await supabase
         .from('sessoes')

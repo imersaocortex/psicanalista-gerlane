@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useToast } from '@/context/ToastContext';
 import styles from './planos.module.css';
 import Button from '@/components/ui/Button';
-import { Plus, CreditCard, Trash2, Edit2, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, CreditCard, Trash2, Edit2, CheckCircle, XCircle, Hash } from 'lucide-react';
 
 export default function PlanosAdminPage() {
   const [plans, setPlans] = useState([]);
@@ -14,10 +14,12 @@ export default function PlanosAdminPage() {
   const supabase = createClient();
 
   const [formData, setFormData] = useState({
+    id: null,
     nome: '',
     descricao: '',
     preco: '',
     periodicidade: 'mensal',
+    limite_sessoes: 4,
     asaas_id: ''
   });
 
@@ -32,24 +34,66 @@ export default function PlanosAdminPage() {
     setLoading(false);
   }
 
+  const openNewPlanModal = () => {
+    setFormData({ id: null, nome: '', descricao: '', preco: '', periodicidade: 'mensal', limite_sessoes: 4, asaas_id: '' });
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (plan) => {
+    setFormData({
+      id: plan.id,
+      nome: plan.nome,
+      descricao: plan.descricao,
+      preco: plan.preco,
+      periodicidade: plan.periodicidade,
+      limite_sessoes: plan.limite_sessoes || 4,
+      asaas_id: plan.asaas_id || ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Tem certeza que deseja excluir este plano? Esta ação só funcionará se nenhum paciente estiver usando este plano.')) return;
+    
+    try {
+      const { error } = await supabase.from('planos').delete().eq('id', id);
+      if (error) {
+        if (error.code === '23503') throw new Error('Não é possível excluir um plano que já está vinculado a pacientes. Sugerimos apenas inativá-lo.');
+        throw error;
+      }
+      addToast('Plano excluído com sucesso!', 'success');
+      fetchPlans();
+    } catch (error) {
+      addToast(error.message || 'Erro ao excluir plano.', 'error');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { error } = await supabase
-        .from('planos')
-        .insert({
-          ...formData,
-          preco: parseFloat(formData.preco)
-        });
+      const payload = {
+        nome: formData.nome,
+        descricao: formData.descricao,
+        preco: parseFloat(formData.preco),
+        periodicidade: formData.periodicidade,
+        limite_sessoes: parseInt(formData.limite_sessoes),
+        asaas_id: formData.asaas_id
+      };
 
-      if (error) throw error;
+      if (formData.id) {
+        const { error } = await supabase.from('planos').update(payload).eq('id', formData.id);
+        if (error) throw error;
+        addToast('Plano atualizado com sucesso!', 'success');
+      } else {
+        const { error } = await supabase.from('planos').insert(payload);
+        if (error) throw error;
+        addToast('Plano criado com sucesso! 💎', 'success');
+      }
 
-      addToast('Plano criado com sucesso! 💎', 'success');
       setIsModalOpen(false);
-      setFormData({ nome: '', descricao: '', preco: '', periodicidade: 'mensal', asaas_id: '' });
       fetchPlans();
     } catch (error) {
-      addToast('Erro ao criar plano', 'error');
+      addToast('Erro ao salvar o plano', 'error');
     }
   };
 
@@ -67,9 +111,9 @@ export default function PlanosAdminPage() {
       <div className={styles.header}>
         <div>
           <h1>Gestão de Planos</h1>
-          <p>Configure os planos de assinatura recorrente para seus pacientes.</p>
+          <p>Configure os planos de assinatura recorrente e seus limites de sessões.</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
+        <Button onClick={openNewPlanModal}>
           <Plus size={18} /> Novo Plano
         </Button>
       </div>
@@ -83,23 +127,29 @@ export default function PlanosAdminPage() {
             <div className={styles.priceSection}>
               <span className={styles.currency}>R$</span>
               <span className={styles.price}>{plan.preco}</span>
-              <span className={styles.period}>/mês</span>
+              <span className={styles.period}>/{plan.periodicidade === 'avulso' ? 'sessão' : 'mês'}</span>
             </div>
             
             <div className={styles.asaasInfo}>
+              <Hash size={14} />
+              <span>Limite: {plan.limite_sessoes || 'Ilimitado'} sessões</span>
+            </div>
+            
+            <div className={styles.asaasInfo} style={{marginTop: '4px'}}>
               <CreditCard size={14} />
               <span>Asaas ID: {plan.asaas_id || 'Não vinculado'}</span>
             </div>
 
             <div className={styles.planActions}>
-              <button className={styles.editBtn}><Edit2 size={16} /></button>
+              <button className={styles.editBtn} onClick={() => handleEdit(plan)} title="Editar"><Edit2 size={16} /></button>
               <button 
                 className={plan.ativo ? styles.deactivateBtn : styles.activateBtn}
                 onClick={() => toggleStatus(plan.id, plan.ativo)}
+                title={plan.ativo ? "Inativar" : "Ativar"}
               >
                 {plan.ativo ? <XCircle size={16} /> : <CheckCircle size={16} />}
               </button>
-              <button className={styles.deleteBtn}><Trash2 size={16} /></button>
+              <button className={styles.deleteBtn} onClick={() => handleDelete(plan.id)} title="Excluir"><Trash2 size={16} /></button>
             </div>
           </div>
         ))}
@@ -114,7 +164,7 @@ export default function PlanosAdminPage() {
       {isModalOpen && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
-            <h2>Criar Novo Plano</h2>
+            <h2>{formData.id ? 'Editar Plano' : 'Criar Novo Plano'}</h2>
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.formGroup}>
                 <label>Nome do Plano</label>
@@ -159,18 +209,31 @@ export default function PlanosAdminPage() {
                   </select>
                 </div>
               </div>
-              <div className={styles.formGroup}>
-                <label>Asaas ID (Opcional)</label>
-                <input 
-                  type="text" 
-                  value={formData.asaas_id} 
-                  onChange={e => setFormData({...formData, asaas_id: e.target.value})}
-                  placeholder="prod_..."
-                />
+              <div className={styles.row}>
+                <div className={styles.formGroup}>
+                  <label>Limite de Sessões (por ciclo)</label>
+                  <input 
+                    type="number" 
+                    value={formData.limite_sessoes} 
+                    onChange={e => setFormData({...formData, limite_sessoes: e.target.value})}
+                    required 
+                    min="1"
+                    placeholder="Ex: 4"
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Asaas ID (Opcional)</label>
+                  <input 
+                    type="text" 
+                    value={formData.asaas_id} 
+                    onChange={e => setFormData({...formData, asaas_id: e.target.value})}
+                    placeholder="prod_..."
+                  />
+                </div>
               </div>
               <div className={styles.modalFooter}>
                 <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                <Button type="submit">Criar Plano</Button>
+                <Button type="submit">{formData.id ? 'Salvar Alterações' : 'Criar Plano'}</Button>
               </div>
             </form>
           </div>

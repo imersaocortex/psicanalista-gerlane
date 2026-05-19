@@ -78,12 +78,23 @@ export async function POST(request) {
       const notificationUserId = localPayment.pacientes?.user_id;
       
       if (notificationUserId) {
+        const title = 'Pagamento Confirmado! 🎉';
+        const msg = `Seu pagamento no valor de R$ ${localPayment.valor} foi processado com sucesso. Seu plano está ativo.`;
+
         await supabase.from('notificacoes').insert({
           user_id: notificationUserId,
-          titulo: 'Pagamento Confirmado! 🎉',
-          mensagem: `Seu pagamento no valor de R$ ${localPayment.valor} foi processado com sucesso. Seu plano está ativo.`,
+          titulo: title,
+          mensagem: msg,
           lida: false
         });
+
+        // Enviar por WhatsApp via Evolution API
+        try {
+          const { sendWhatsAppMessage } = require('@/utils/whatsapp');
+          await sendWhatsAppMessage(notificationUserId, `*${title}*\n\n${msg}`);
+        } catch (err) {
+          console.error('[Asaas Webhook] Error calling sendWhatsAppMessage:', err);
+        }
       }
 
       console.log(`[Asaas Webhook] Payment ${externalReference} successfully updated to PAGO.`);

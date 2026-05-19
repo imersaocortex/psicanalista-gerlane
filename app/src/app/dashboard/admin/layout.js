@@ -16,6 +16,7 @@ const adminMenu = [
   { icon: '💳', label: 'Planos', href: '/dashboard/admin/planos' },
   { icon: '📝', label: 'Prontuário', href: '/dashboard/admin/prontuario' },
   { icon: '💰', label: 'Financeiro', href: '/dashboard/admin/financeiro' },
+  { icon: '⚙️', label: 'Configurações', href: '/dashboard/admin/configuracoes' },
   { icon: '👤', label: 'Meu Perfil', href: '/dashboard/admin/perfil' },
 ];
 
