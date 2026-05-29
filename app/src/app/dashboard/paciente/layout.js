@@ -11,6 +11,7 @@ const patientMenu = [
   { icon: '🏠', label: 'Início', href: '/dashboard/paciente' },
   { icon: '📅', label: 'Agenda', href: '/dashboard/paciente/agenda' },
   { icon: '📝', label: 'Minha Anamnese', href: '/dashboard/paciente/anamnese' },
+  { icon: '🌟', label: 'Planos', href: '/dashboard/paciente/planos' },
   { icon: '💳', label: 'Pagamentos', href: '/dashboard/paciente/pagamentos' },
   { icon: '👤', label: 'Meu Perfil', href: '/dashboard/paciente/perfil' },
   { icon: '❓', label: 'Dúvidas (FAQ)', href: '/dashboard/paciente/faq' },

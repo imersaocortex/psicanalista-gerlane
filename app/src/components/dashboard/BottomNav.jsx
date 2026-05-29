@@ -9,7 +9,8 @@ import {
   HelpCircle,
   User,
   Users,
-  FileText
+  FileText,
+  Star
 } from 'lucide-react';
 
 export default function BottomNav({ items }) {
@@ -19,6 +20,7 @@ export default function BottomNav({ items }) {
   const defaultItems = [
     { icon: <Home size={20} />, label: 'Início', href: '/dashboard/paciente' },
     { icon: <Calendar size={20} />, label: 'Agenda', href: '/dashboard/paciente/agenda' },
+    { icon: <Star size={20} />, label: 'Planos', href: '/dashboard/paciente/planos' },
     { icon: <HelpCircle size={20} />, label: 'FAQ', href: '/dashboard/paciente/faq' },
     { icon: <User size={20} />, label: 'Perfil', href: '/dashboard/paciente/perfil' },
   ];

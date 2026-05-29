@@ -23,6 +23,7 @@ export default function EditarPacientePage() {
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [originalPlanoId, setOriginalPlanoId] = useState('');
   const [lastPayment, setLastPayment] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('pendente');
   const [isNewPayment, setIsNewPayment] = useState(false);
@@ -73,6 +74,7 @@ export default function EditarPacientePage() {
             plano_id: patient.plano_id || '',
             status: patient.status || 'ativo'
           });
+          setOriginalPlanoId(patient.plano_id || '');
           if (patient.profiles?.avatar_url) {
             setPhotoPreview(patient.profiles.avatar_url);
           } else if (patient.foto_url) {
@@ -179,9 +181,41 @@ export default function EditarPacientePage() {
 
       if (patientError) throw patientError;
 
-      // 4. Update/Create Payment Status
-      if (!lastPayment && isNewPayment && formData.plano_id) {
-        const selectedPlan = plans.find(p => p.id === formData.plano_id);
+      // 4. Lógica de Pagamentos e Troca de Plano
+      const selectedPlan = plans.find(p => p.id === formData.plano_id);
+
+      if (formData.plano_id && formData.plano_id !== originalPlanoId) {
+        // O PLANO MUDOU!
+        if (selectedPlan) {
+          // Criar nova fatura para o novo plano
+          await supabase.from('pagamentos').insert({
+            paciente_id: id,
+            valor: selectedPlan.preco,
+            tipo_plano: selectedPlan.periodicidade || 'avulso',
+            status: paymentStatus === 'pago' ? 'pago' : 'pendente', 
+            data: new Date().toISOString()
+          });
+
+          // Disparar notificação (que envia WhatsApp) avisando da troca
+          if (userId) {
+            try {
+              await fetch('/api/notifications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId: userId,
+                  title: 'Plano Atualizado',
+                  message: `Seu plano foi alterado para: ${selectedPlan.nome}. Acesse o portal para verificar o status do pagamento.`,
+                  link: '/dashboard/paciente/pagamentos'
+                })
+              });
+            } catch (err) {
+              console.error('Erro ao notificar troca de plano:', err);
+            }
+          }
+        }
+      } else if (!lastPayment && isNewPayment && formData.plano_id) {
+        // Cadastro inicial de plano sem faturas anteriores
         if (selectedPlan) {
           await supabase.from('pagamentos').insert({
             paciente_id: id,
@@ -192,6 +226,7 @@ export default function EditarPacientePage() {
           });
         }
       } else if (lastPayment && paymentStatus !== lastPayment.status) {
+        // Apenas mudou o status do pagamento atual
         await supabase
           .from('pagamentos')
           .update({ status: paymentStatus })

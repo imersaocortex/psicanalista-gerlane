@@ -82,6 +82,22 @@ export default function PacientePlanos() {
         body: JSON.stringify({ paymentId: payment.id })
       });
 
+      // 3. Disparar notificação (que aciona WhatsApp) informando a geração da fatura
+      try {
+        await fetch('/api/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            title: 'Fatura de Plano Gerada',
+            message: `A fatura para a ativação do seu plano ${plan.nome} foi gerada. Conclua o pagamento para habilitar seus benefícios!`,
+            link: '/dashboard/paciente/pagamentos'
+          })
+        });
+      } catch (err) {
+        console.error('Erro ao disparar notificação de troca de plano:', err);
+      }
+
       const result = await response.json();
 
       if (result.invoiceUrl) {
