@@ -32,10 +32,10 @@ export default function PacienteLayout({ children }) {
     }
   }, [isAuthenticated, user, loading, router]);
 
-  if (loading || (isAuthenticated && (!user || !user.tipo))) return (
+  if (loading) return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
       <div className={styles.spinner}></div>
-      <p style={{ marginTop: '20px', color: '#666' }}>Carregando dados...</p>
+      <p style={{ marginTop: '20px', color: '#666' }}>Carregando...</p>
     </div>
   );
 
