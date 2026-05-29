@@ -37,15 +37,16 @@ export default function AdminLayout({ children }) {
     if (!loading) {
       if (!isAuthenticated) {
         router.push('/login');
-      } else if (user?.tipo !== 'admin') {
+      } else if (user && user.tipo && user.tipo !== 'admin') {
         router.push('/dashboard/paciente');
       }
     }
   }, [isAuthenticated, user, loading, router]);
 
-  if (loading) return (
-    <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
+  if (loading || (isAuthenticated && (!user || !user.tipo))) return (
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
       <div className={styles.spinner}></div>
+      <p style={{ marginTop: '20px', color: '#666' }}>Preparando painel...</p>
     </div>
   );
 
