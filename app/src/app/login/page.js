@@ -40,7 +40,7 @@ export default function LoginPage() {
       
       // Force hard redirect to bypass Next.js hydration or client-side routing bugs during auth transitions
       const dest = loggedUser.tipo === 'admin' ? '/dashboard/admin' : '/dashboard/paciente';
-      window.location.replace(dest);
+      window.location.href = dest;
     } catch (error) {
       console.error('Erro no login:', error);
       addToast(error.message || 'Erro ao realizar login. Verifique suas credenciais.', 'error');
