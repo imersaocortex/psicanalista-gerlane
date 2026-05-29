@@ -328,6 +328,53 @@
   padding: 1rem;
 }
 
+.modalitySection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 0.5rem;
+}
+
+.modalitySection label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.modalityGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.modalityBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modalityBtn:hover {
+  border-color: var(--color-green);
+  color: var(--color-green);
+}
+
+.activeModality {
+  background: var(--color-green);
+  color: white;
+  border-color: var(--color-green);
+}
+
 .modalFooter {
   margin-top: 2.5rem;
   display: flex;

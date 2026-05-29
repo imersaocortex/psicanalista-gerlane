@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { getDaysInMonth, getFirstDayOfMonth, getStatusColor } from '@/utils/helpers';
 import styles from './agenda.module.css';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Info, X, Clock, CheckCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Info, X, Clock, CheckCircle, Monitor, Building2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
 export default function AgendaPage() {
@@ -18,6 +18,7 @@ export default function AgendaPage() {
   const [availability, setAvailability] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
+  const [selectedModality, setSelectedModality] = useState(null);
   const [requesting, setRequesting] = useState(false);
   const [bookedSlots, setBookedSlots] = useState([]);
   const [hasPendingPayment, setHasPendingPayment] = useState(false);
@@ -177,7 +178,7 @@ export default function AgendaPage() {
           paciente_id: patient.id,
           data: sessionDate.toISOString(),
           status: 'pendente',
-          observacoes: 'Solicitado via Portal do Paciente'
+          observacoes: `Modalidade: ${selectedModality === 'online' ? 'Online' : 'Presencial'} | Solicitado via Portal do Paciente`
         });
 
       if (error) throw error;
@@ -317,6 +318,7 @@ export default function AgendaPage() {
                     const dateObj = new Date(dateStr + 'T12:00:00');
                     setSelectedDate(dateObj);
                     setSelectedTime(null);
+                    setSelectedModality(null);
                     
                     // Fetch all booked slots for this day
                     const startOfDay = new Date(dateStr + 'T00:00:00').toISOString();
@@ -359,13 +361,33 @@ export default function AgendaPage() {
                   </div>
                 </div>
               )}
+
+              {selectedTime && (
+                <div className={styles.modalitySection}>
+                  <label>Selecione a Modalidade</label>
+                  <div className={styles.modalityGrid}>
+                    <button 
+                      className={`${styles.modalityBtn} ${selectedModality === 'presencial' ? styles.activeModality : ''}`}
+                      onClick={() => setSelectedModality('presencial')}
+                    >
+                      <Building2 size={18} /> Presencial
+                    </button>
+                    <button 
+                      className={`${styles.modalityBtn} ${selectedModality === 'online' ? styles.activeModality : ''}`}
+                      onClick={() => setSelectedModality('online')}
+                    >
+                      <Monitor size={18} /> Online
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className={styles.modalFooter}>
               <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
               <Button 
                 onClick={handleConfirmRequest} 
-                disabled={!selectedDate || !selectedTime || requesting}
+                disabled={!selectedDate || !selectedTime || !selectedModality || requesting}
               >
                 {requesting ? 'Enviando...' : 'Confirmar Solicitação'}
               </Button>
