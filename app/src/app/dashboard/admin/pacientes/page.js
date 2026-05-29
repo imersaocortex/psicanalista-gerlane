@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { getInitials } from '@/utils/helpers';
 import Link from 'next/link';
@@ -13,7 +13,8 @@ import { useToast } from '@/context/ToastContext';
 
 export default function PacientesPage() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('q') || '');
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeMenu, setActiveMenu] = useState(null);
@@ -64,6 +65,14 @@ export default function PacientesPage() {
 
     fetchPatients();
   }, []);
+
+  // Update search state if URL changes
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q !== null) {
+      setSearch(q);
+    }
+  }, [searchParams]);
 
   const filtered = patients.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) || 

@@ -5,8 +5,16 @@ import { ToastProvider } from '@/context/ToastContext';
 export const metadata = {
   title: 'Dra. Gerlane Albuquerque | Psicanalista Clínica',
   description: 'Psicanalista clínica especializada em atendimento para crianças, adolescentes, adultos e casais. CNP: 20/2832.',
+  manifest: '/manifest.json',
+  themeColor: '#1a1b26',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Consultório',
+  },
   icons: {
     icon: '/images/favicon.png',
+    apple: '/images/favicon.png',
   },
 };
 

@@ -1,0 +1,21 @@
+{
+  "name": "Portal Dra. Gerlane",
+  "short_name": "Terapia",
+  "description": "Portal da Clínica Psicanalítica Dra. Gerlane",
+  "start_url": "/login",
+  "display": "standalone",
+  "background_color": "#1a1b26",
+  "theme_color": "#1a1b26",
+  "icons": [
+    {
+      "src": "/images/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

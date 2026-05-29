@@ -23,7 +23,9 @@ import {
   Send,
   MapPin,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ArrowRight,
+  AlertTriangle
 } from 'lucide-react';
 
 /* Scroll Reveal hook */
@@ -188,6 +190,53 @@ export function Modalities() {
               <li><CheckCircle2 size={16} /> Flexibilidade de horários</li>
               <li><CheckCircle2 size={16} /> Atendimento em todo o Brasil</li>
             </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function Burnout() {
+  const ref = useScrollReveal();
+  
+  return (
+    <section id="burnout" className={styles.section} ref={ref} style={{ background: 'var(--color-primary)', color: '#fff' }} suppressHydrationWarning>
+      <div className={styles.container} suppressHydrationWarning>
+        <div className={styles.reveal} suppressHydrationWarning>
+          <span className={styles.sectionBadgeDark}>Especialidade</span>
+          <h2 className={`${styles.centered} ${styles.textLight}`}>Síndrome de Burnout</h2>
+          <div className={styles.dividerCenter} suppressHydrationWarning />
+          <p className={styles.sectionSub} style={{color: 'rgba(255,255,255,0.8)'}}>
+            O esgotamento profissional não é apenas cansaço. É uma exaustão física e mental que afeta todas as áreas da sua vida.
+          </p>
+        </div>
+
+        <div className={styles.aboutGrid} style={{marginTop: '40px', alignItems: 'center'}} suppressHydrationWarning>
+          <div className={`${styles.aboutContent} ${styles.reveal}`} suppressHydrationWarning>
+            <h3 style={{fontSize: '1.5rem', marginBottom: '20px', color: '#fff'}}>Sinais de Alerta:</h3>
+            <ul className={styles.modalityList} style={{gap: '16px'}}>
+              <li style={{color: '#fff'}}><AlertTriangle size={20} color="var(--color-accent)" /> Sensação constante de exaustão e falta de energia</li>
+              <li style={{color: '#fff'}}><AlertTriangle size={20} color="var(--color-accent)" /> Distanciamento emocional e irritabilidade no trabalho</li>
+              <li style={{color: '#fff'}}><AlertTriangle size={20} color="var(--color-accent)" /> Queda na produtividade e dificuldade de concentração</li>
+              <li style={{color: '#fff'}}><AlertTriangle size={20} color="var(--color-accent)" /> Sintomas físicos como dores de cabeça e insônia</li>
+            </ul>
+            <div style={{ marginTop: '2.5rem' }}>
+              <a href="https://wa.me/5584998127788" target="_blank" rel="noopener noreferrer" className={styles.primaryBtn} style={{ background: '#fff', color: 'var(--color-primary)', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '16px 24px', fontSize: '1.1rem', fontWeight: '600' }}>
+                Buscar Ajuda Especializada <ArrowRight size={20} />
+              </a>
+            </div>
+          </div>
+          <div className={`${styles.aboutImage} ${styles.reveal}`} suppressHydrationWarning>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '30px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)' }}>
+              <h3 style={{color: 'var(--color-accent)', marginBottom: '15px'}}>Não normalize a exaustão!</h3>
+              <p style={{lineHeight: 1.6, color: 'rgba(255,255,255,0.9)', marginBottom: '20px'}}>
+                A cultura moderna nos ensina a valorizar o excesso de trabalho, mas o preço cobrado pela saúde mental é alto demais.
+              </p>
+              <p style={{lineHeight: 1.6, color: 'rgba(255,255,255,0.9)'}}>
+                Através da psicanálise, podemos mapear os limites que foram ultrapassados, entender sua relação com o trabalho e resgatar o seu bem-estar para que você volte a ser protagonista da sua vida.
+              </p>
+            </div>
           </div>
         </div>
       </div>

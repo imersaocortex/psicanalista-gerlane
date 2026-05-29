@@ -13,6 +13,27 @@ export function AuthProvider({ children }) {
     setLoading(true);
     await supabase.auth.signOut();
     setUser(null);
+    
+    // Limpeza Profunda de Cache do PWA e Navegador
+    if (typeof window !== 'undefined') {
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+      const cookies = document.cookie.split("; ");
+      for (let c = 0; c < cookies.length; c++) {
+        const d = window.location.hostname.split(".");
+        while (d.length > 0) {
+          const cookieBase = encodeURIComponent(cookies[c].split(";")[0].split("=")[0]) + '=; expires=Thu, 01-Jan-1970 00:00:01 GMT; domain=' + d.join('.') + ' ;path=';
+          const p = location.pathname.split('/');
+          document.cookie = cookieBase + '/';
+          while (p.length > 0) {
+            document.cookie = cookieBase + p.join('/');
+            p.pop();
+          }
+          d.shift();
+        }
+      }
+    }
+
     // Forçar hard reload no logout para limpar todo o cache e estado do Roteador do Next.js
     window.location.href = '/login';
   }, [supabase]);
@@ -46,6 +67,11 @@ export function AuthProvider({ children }) {
   }, [supabase]);
 
   useEffect(() => {
+    // Registrar o Service Worker (PWA)
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch((err) => console.log('SW registration failed: ', err));
+    }
+
     let inactivityTimer;
 
     const resetTimer = () => {

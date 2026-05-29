@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useToast } from '@/context/ToastContext';
 import { formatCurrency, formatDate, getStatusColor, getStatusBg } from '@/utils/helpers';
+import { exportToPDF } from '@/utils/exportPDF';
 import styles from './financeiro.module.css';
 import Button from '@/components/ui/Button';
 import { DollarSign, PieChart, TrendingUp, Filter, FileBarChart, Settings, Trash2 } from 'lucide-react';
@@ -87,7 +88,9 @@ export default function FinanceiroPage() {
           <Link href="/dashboard/admin/financeiro/configuracoes">
             <Button variant="secondary"><Settings size={16} /> Configurações</Button>
           </Link>
-          <Button><FileBarChart size={16} /> Relatório Completo</Button>
+          <Button onClick={() => exportToPDF('relatorio-financeiro', 'relatorio_financeiro.pdf')}>
+            <FileBarChart size={16} /> Relatório Completo
+          </Button>
         </div>
       </div>
 
@@ -135,7 +138,7 @@ export default function FinanceiroPage() {
           </div>
         </div>
 
-        <div className={styles.tableCard}>
+        <div className={styles.tableCard} id="relatorio-financeiro">
           <table className={styles.table}>
             <thead>
               <tr>

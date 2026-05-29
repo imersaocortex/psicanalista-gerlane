@@ -12,6 +12,7 @@ export default function Header({ onMenuClick }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
@@ -107,6 +108,14 @@ export default function Header({ onMenuClick }) {
     }
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      router.push(`/dashboard/admin/pacientes?q=${encodeURIComponent(searchTerm)}`);
+      setSearchTerm('');
+    }
+  };
+
   return (
     <header className={styles.header}>
       <div className={styles.leftGroup}>
@@ -114,10 +123,16 @@ export default function Header({ onMenuClick }) {
           <img src="/images/logo.png" alt="Logo" className={styles.logoImg} />
         </div>
         
-        <div className={styles.search}>
+        <form className={styles.search} onSubmit={handleSearch}>
           <Search size={16} className={styles.searchIcon} />
-          <input type="text" placeholder="Pesquisar..." className={styles.searchInput} />
-        </div>
+          <input 
+            type="text" 
+            placeholder="Pesquisar paciente..." 
+            className={styles.searchInput} 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </form>
       </div>
 
       <div className={styles.actions}>
