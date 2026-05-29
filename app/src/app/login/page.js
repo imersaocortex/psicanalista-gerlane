@@ -6,6 +6,7 @@ import { useToast } from '@/context/ToastContext';
 import styles from './login.module.css';
 import Link from 'next/link';
 import { ArrowLeft, Lock } from 'lucide-react';
+import InstallPWA from '@/components/ui/InstallPWA';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -99,6 +100,8 @@ export default function LoginPage() {
             {isSubmitting ? <span className={styles.spinner} /> : 'Entrar no Sistema'}
           </button>
         </form>
+
+        <InstallPWA />
 
         <div className={styles.footer}>
           <div className={styles.secureBadge}>
