@@ -53,13 +53,13 @@ export async function POST(request) {
       configMap[c.chave] = val;
     });
 
-    const asaasKey = configMap.asaas_api_key;
+    const asaasKey = String(configMap.asaas_api_key || '').trim();
     const isSandbox = configMap.asaas_environment === 'sandbox';
     const asaasUrl = isSandbox 
       ? 'https://sandbox.asaas.com/api/v3' 
-      : 'https://www.asaas.com/api/v3';
+      : 'https://api.asaas.com/v3';
 
-    if (!asaasKey) {
+    if (!asaasKey || asaasKey === '') {
       return NextResponse.json({ error: 'Configuração do Asaas ausente' }, { status: 500 });
     }
 
