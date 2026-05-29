@@ -182,7 +182,19 @@ export default function AgendaPage() {
 
       if (error) throw error;
 
-      addToast('Solicitação enviada! Aguarde a confirmação da Dra. Gerlane.', 'success');
+      // Disparar notificação de sucesso para o próprio paciente
+      fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          title: 'Agendamento Solicitado 📅',
+          message: `Olá! Seu pedido de agendamento para o dia ${sessionDate.toLocaleDateString('pt-BR')} às ${selectedTime} foi enviado com sucesso para a clínica. Avisaremos assim que for confirmado!`,
+          link: '/dashboard/paciente/agenda'
+        })
+      }).catch(err => console.error(err));
+
+      addToast('Solicitação enviada! Aguarde a confirmação da clínica.', 'success');
       setIsModalOpen(false);
       fetchSessions();
     } catch (error) {

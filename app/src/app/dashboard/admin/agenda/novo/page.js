@@ -34,7 +34,7 @@ export default function NovoAgendamentoPage() {
       // Fetch patients
       const { data: pData } = await supabase
         .from('pacientes')
-        .select('id, profiles(nome)')
+        .select('id, user_id, profiles(nome)')
         .eq('status', 'ativo');
       
       setPatients(pData || []);
@@ -121,6 +121,20 @@ export default function NovoAgendamentoPage() {
         });
 
       if (error) throw error;
+
+      const selectedPatient = patients.find(p => p.id === formData.paciente_id);
+      if (selectedPatient && selectedPatient.user_id) {
+        fetch('/api/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: selectedPatient.user_id,
+            title: 'Consulta Agendada 📅',
+            message: `Olá ${selectedPatient.profiles?.nome?.split(' ')[0] || ''}! Uma nova sessão de terapia foi agendada para você no dia ${sessionDate.toLocaleDateString('pt-BR')} às ${formData.hora}.`,
+            link: '/dashboard/paciente/agenda'
+          })
+        }).catch(err => console.error(err));
+      }
 
       addToast('Sessão agendada com sucesso! 📅', 'success');
       router.push('/dashboard/admin/agenda');

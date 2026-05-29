@@ -13,7 +13,9 @@ export default function PacienteHome() {
     upcoming: null,
     pendingPayment: null,
     currentPlan: null,
-    recentNotifications: []
+    recentNotifications: [],
+    usedSessions: 0,
+    sessionLimit: 4
   });
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
@@ -35,7 +37,11 @@ export default function PacienteHome() {
         }
 
         if (patient) {
-          const [sessionsRes, paymentsRes, notifsRes] = await Promise.all([
+          const date = new Date();
+          const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).toISOString();
+          const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+          const [sessionsRes, paymentsRes, notifsRes, monthSessionsRes] = await Promise.all([
             supabase.from('sessoes')
               .select('*')
               .eq('paciente_id', patient.id)
@@ -52,14 +58,22 @@ export default function PacienteHome() {
               .select('*')
               .eq('user_id', user.id)
               .order('created_at', { ascending: false })
-              .limit(3)
+              .limit(3),
+            supabase.from('sessoes')
+              .select('id')
+              .eq('paciente_id', patient.id)
+              .gte('data', startOfMonth)
+              .lte('data', endOfMonth)
+              .neq('status', 'cancelada')
           ]);
 
           setData({
             upcoming: sessionsRes.data?.[0] || null,
             pendingPayment: paymentsRes.data?.[0] || null,
             currentPlan: patient.planos || null,
-            recentNotifications: notifsRes.data || []
+            recentNotifications: notifsRes.data || [],
+            usedSessions: monthSessionsRes.data?.length || 0,
+            sessionLimit: patient.planos?.limite_sessoes || 4,
           });
         }
       } catch (error) {
@@ -197,12 +211,26 @@ export default function PacienteHome() {
             {data.currentPlan ? (
               <>
                 <p className={styles.mainInfo}>{data.currentPlan.nome}</p>
-                <p className={styles.subInfo}>R$ {data.currentPlan.preco}/{data.currentPlan.periodicidade}</p>
+                <p className={styles.subInfo} style={{marginBottom: 0}}>R$ {data.currentPlan.preco}/{data.currentPlan.periodicidade}</p>
+                
+                <div className={styles.progressTrack}>
+                  <div 
+                    className={styles.progressFill} 
+                    style={{
+                      width: `${Math.min((data.usedSessions / data.sessionLimit) * 100, 100)}%`, 
+                      backgroundColor: data.usedSessions >= data.sessionLimit ? 'var(--color-error)' : 'var(--color-green)'
+                    }}
+                  ></div>
+                </div>
+                <div className={styles.progressText}>
+                  <span>{data.usedSessions} sessões utilizadas</span>
+                  <span>{Math.max(data.sessionLimit - data.usedSessions, 0)} restantes</span>
+                </div>
               </>
             ) : (
               <p className={styles.emptyText}>Nenhum plano ativo.</p>
             )}
-            <Link href="/dashboard/paciente/planos" className={styles.actionLink} style={{color: '#3498db', marginTop: '10px'}}>
+            <Link href="/dashboard/paciente/planos" className={styles.actionLink} style={{color: '#3498db', marginTop: 'auto', paddingTop: '15px'}}>
               Gerenciar plano <ArrowRight size={14} />
             </Link>
           </div>
