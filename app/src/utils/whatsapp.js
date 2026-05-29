@@ -39,9 +39,9 @@ export async function sendWhatsAppMessage(userId, message, overridePhone = null)
       }
     });
 
-    const apiUrl = configMap['evolution_api_url'];
-    const instance = configMap['evolution_api_instance'];
-    const apiKey = configMap['evolution_api_apikey'];
+    const apiUrl = String(configMap['evolution_api_url'] || '').trim().replace(/\/+$/, '');
+    const instance = String(configMap['evolution_api_instance'] || '').trim();
+    const apiKey = String(configMap['evolution_api_apikey'] || '').trim();
 
     if (!apiUrl || !instance || !apiKey) {
       console.log('[WhatsApp Service] Evolution API is not fully configured. Skipping send.');
