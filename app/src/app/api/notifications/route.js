@@ -39,12 +39,13 @@ export async function POST(request) {
       throw insertError;
     }
 
-    // 2. Disparar para o WhatsApp do paciente e aguardar (Vercel Serverless mata promises não aguardadas)
+    // 2. Disparar para o WhatsApp do paciente e aguardar
     const formattedMessage = `*${title}*\n\n${message}`;
-    try {
-      await sendWhatsAppMessage(userId, formattedMessage);
-    } catch (err) {
-      console.error('[API Notifications] Failed to send WhatsApp message:', err);
+    const result = await sendWhatsAppMessage(userId, formattedMessage);
+    
+    if (result && result.success === false) {
+      console.error('[API Notifications] Failed to send WhatsApp message:', result.error);
+      return NextResponse.json({ error: `WhatsApp Error: ${result.error}` }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, notification }, { status: 200 });
