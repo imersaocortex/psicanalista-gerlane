@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import { useToast } from '@/context/ToastContext';
@@ -16,16 +16,15 @@ export default function PagamentosPage() {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
       addToast('Pagamento processado! Ele será atualizado em instantes após a confirmação do Asaas.', 'success');
-      // Limpar os parâmetros da URL sem recarregar a página
-      const url = new URL(window.location);
-      url.searchParams.delete('success');
-      window.history.replaceState({}, '', url);
+      // Usar o router do Next.js para não quebrar a hidratação e o estado da página
+      router.replace('/dashboard/paciente/pagamentos');
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   useEffect(() => {
     if (!user) return;

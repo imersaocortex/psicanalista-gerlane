@@ -1,16 +1,18 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { useToast } from '@/context/ToastContext';
 import { formatCurrency, formatDate, getStatusColor, getStatusBg } from '@/utils/helpers';
 import styles from './financeiro.module.css';
 import Button from '@/components/ui/Button';
-import { DollarSign, PieChart, TrendingUp, Filter, FileBarChart, Settings } from 'lucide-react';
+import { DollarSign, PieChart, TrendingUp, Filter, FileBarChart, Settings, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function FinanceiroPage() {
   const [filter, setFilter] = useState('todos');
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { addToast } = useToast();
   const supabase = createClient();
 
   useEffect(() => {
@@ -47,6 +49,21 @@ export default function FinanceiroPage() {
 
     fetchPayments();
   }, []);
+
+  const handleDelete = async (id) => {
+    if (!confirm('Tem certeza que deseja excluir esta fatura do paciente?')) return;
+    
+    try {
+      const { error } = await supabase.from('pagamentos').delete().eq('id', id);
+      if (error) throw error;
+      
+      setPayments(prev => prev.filter(p => p.id !== id));
+      addToast('Fatura excluída com sucesso!', 'success');
+    } catch (error) {
+      console.error('Erro ao excluir fatura:', error);
+      addToast('Erro ao excluir fatura.', 'error');
+    }
+  };
 
   const totalRevenue = payments.filter(p => p.status === 'pago').reduce((s, p) => s + (p.valor || 0), 0);
   const totalPending = payments.filter(p => p.status === 'pendente').reduce((s, p) => s + (p.valor || 0), 0);
@@ -127,6 +144,7 @@ export default function FinanceiroPage() {
                 <th>Valor</th>
                 <th>Data</th>
                 <th>Status</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -140,6 +158,15 @@ export default function FinanceiroPage() {
                     <span className={styles.statusBadge} style={{color: getStatusColor(p.status), background: getStatusBg(p.status)}}>
                       {p.status}
                     </span>
+                  </td>
+                  <td>
+                    <button 
+                      onClick={() => handleDelete(p.id)}
+                      title="Excluir Fatura"
+                      style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </td>
                 </tr>
               ))}
