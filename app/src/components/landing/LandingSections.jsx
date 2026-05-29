@@ -216,10 +216,10 @@ export function Burnout() {
           <div className={`${styles.aboutContent} ${styles.reveal}`} suppressHydrationWarning>
             <h3 style={{fontSize: '1.5rem', marginBottom: '20px', color: '#fff'}}>Sinais de Alerta:</h3>
             <ul className={styles.modalityList} style={{gap: '16px'}}>
-              <li style={{color: '#fff'}}><AlertTriangle size={20} color="var(--color-accent)" /> Sensação constante de exaustão e falta de energia</li>
-              <li style={{color: '#fff'}}><AlertTriangle size={20} color="var(--color-accent)" /> Distanciamento emocional e irritabilidade no trabalho</li>
-              <li style={{color: '#fff'}}><AlertTriangle size={20} color="var(--color-accent)" /> Queda na produtividade e dificuldade de concentração</li>
-              <li style={{color: '#fff'}}><AlertTriangle size={20} color="var(--color-accent)" /> Sintomas físicos como dores de cabeça e insônia</li>
+              <li style={{color: '#fff'}}><AlertTriangle size={20} color="var(--color-gold)" /> Sensação constante de exaustão e falta de energia</li>
+              <li style={{color: '#fff'}}><AlertTriangle size={20} color="var(--color-gold)" /> Distanciamento emocional e irritabilidade no trabalho</li>
+              <li style={{color: '#fff'}}><AlertTriangle size={20} color="var(--color-gold)" /> Queda na produtividade e dificuldade de concentração</li>
+              <li style={{color: '#fff'}}><AlertTriangle size={20} color="var(--color-gold)" /> Sintomas físicos como dores de cabeça e insônia</li>
             </ul>
             <div style={{ marginTop: '2.5rem' }}>
               <a href="https://wa.me/5584998127788" target="_blank" rel="noopener noreferrer" className={styles.primaryBtn} style={{ background: '#fff', color: 'var(--bg-sidebar)', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '16px 24px', fontSize: '1.1rem', fontWeight: '600' }}>
@@ -229,7 +229,7 @@ export function Burnout() {
           </div>
           <div className={`${styles.aboutImage} ${styles.reveal}`} suppressHydrationWarning>
             <div style={{ background: 'rgba(255,255,255,0.1)', padding: '30px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)' }}>
-              <h3 style={{color: 'var(--color-accent)', marginBottom: '15px'}}>Não normalize a exaustão!</h3>
+              <h3 style={{color: 'var(--color-gold)', marginBottom: '15px'}}>Não normalize a exaustão!</h3>
               <p style={{lineHeight: 1.6, color: 'rgba(255,255,255,0.9)', marginBottom: '20px'}}>
                 A cultura moderna nos ensina a valorizar o excesso de trabalho, mas o preço cobrado pela saúde mental é alto demais.
               </p>
