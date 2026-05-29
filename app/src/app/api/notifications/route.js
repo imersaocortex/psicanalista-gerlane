@@ -36,7 +36,7 @@ export async function POST(request) {
       .single();
 
     if (insertError) {
-      throw insertError;
+      console.warn('[API Notifications] Falha ao salvar no banco (RLS), mas prosseguindo com o WhatsApp:', insertError.message);
     }
 
     // 2. Disparar para o WhatsApp do paciente e aguardar
