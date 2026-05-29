@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { sendWhatsApp } from '@/utils/whatsapp';
+import { sendWhatsAppMessage } from '@/utils/whatsapp';
 
 export async function GET(request) {
   try {
@@ -66,7 +66,7 @@ export async function GET(request) {
       const message = `Olá ${pacienteNome}! 👋\n\nPassando para lembrar que nossa sessão de terapia está confirmada para amanhã às *${timeStr}*.\n\nSe precisar reagendar, por favor, avise com antecedência pelo Portal ou por aqui. Até amanhã!`;
 
       try {
-        await sendWhatsApp(paciente.telefone, message);
+        await sendWhatsAppMessage(paciente.user_id, message, paciente.telefone);
         notificationsSent++;
 
         // Também salva a notificação dentro do portal (no sininho)
