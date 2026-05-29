@@ -188,18 +188,24 @@ export default function EditarPacientePage() {
         // O PLANO MUDOU!
         if (selectedPlan) {
           // Criar nova fatura para o novo plano
-          await supabase.from('pagamentos').insert({
+          const { error: invoiceError } = await supabase.from('pagamentos').insert({
             paciente_id: id,
             valor: selectedPlan.preco,
             tipo_plano: selectedPlan.periodicidade || 'avulso',
             status: paymentStatus === 'pago' ? 'pago' : 'pendente', 
             data: new Date().toISOString()
           });
+          
+          if (invoiceError) {
+             console.error("Erro na Fatura:", invoiceError);
+             addToast(`Erro ao criar fatura: ${invoiceError.message}`, 'error');
+             throw invoiceError;
+          }
 
           // Disparar notificação (que envia WhatsApp) avisando da troca
           if (userId) {
             try {
-              await fetch('/api/notifications', {
+              const res = await fetch('/api/notifications', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -209,8 +215,13 @@ export default function EditarPacientePage() {
                   link: '/dashboard/paciente/pagamentos'
                 })
               });
+              const data = await res.json();
+              if (!res.ok) {
+                 throw new Error(data.error || 'Erro desconhecido na API de notificações');
+              }
             } catch (err) {
               console.error('Erro ao notificar troca de plano:', err);
+              addToast(`Falha ao enviar WhatsApp: ${err.message}`, 'error');
             }
           }
         }
