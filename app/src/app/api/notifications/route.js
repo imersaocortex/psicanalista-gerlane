@@ -5,11 +5,11 @@ import { sendWhatsAppMessage } from '@/utils/whatsapp';
 export async function POST(request) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !serviceRoleKey) {
       console.error('[API Notifications] Supabase credentials missing');
-      return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+      return NextResponse.json({ error: 'Server misconfiguration: Keys missing' }, { status: 500 });
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
