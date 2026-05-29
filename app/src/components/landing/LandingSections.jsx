@@ -201,7 +201,7 @@ export function Burnout() {
   const ref = useScrollReveal();
   
   return (
-    <section id="burnout" className={styles.section} ref={ref} style={{ background: 'var(--color-primary)', color: '#fff' }} suppressHydrationWarning>
+    <section id="burnout" className={`${styles.section} ${styles.bgDark}`} ref={ref} suppressHydrationWarning>
       <div className={styles.container} suppressHydrationWarning>
         <div className={styles.reveal} suppressHydrationWarning>
           <span className={styles.sectionBadgeDark}>Especialidade</span>
@@ -222,7 +222,7 @@ export function Burnout() {
               <li style={{color: '#fff'}}><AlertTriangle size={20} color="var(--color-accent)" /> Sintomas físicos como dores de cabeça e insônia</li>
             </ul>
             <div style={{ marginTop: '2.5rem' }}>
-              <a href="https://wa.me/5584998127788" target="_blank" rel="noopener noreferrer" className={styles.primaryBtn} style={{ background: '#fff', color: 'var(--color-primary)', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '16px 24px', fontSize: '1.1rem', fontWeight: '600' }}>
+              <a href="https://wa.me/5584998127788" target="_blank" rel="noopener noreferrer" className={styles.primaryBtn} style={{ background: '#fff', color: 'var(--bg-sidebar)', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '16px 24px', fontSize: '1.1rem', fontWeight: '600' }}>
                 Buscar Ajuda Especializada <ArrowRight size={20} />
               </a>
             </div>
