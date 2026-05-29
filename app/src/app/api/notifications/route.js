@@ -16,7 +16,7 @@ export async function POST(request) {
       auth: { autoRefreshToken: false, persistSession: false }
     });
 
-    const { userId, title, message, link } = await request.json();
+    const { userId, title, message, link, telefone } = await request.json();
 
     if (!userId || !title || !message) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -41,7 +41,7 @@ export async function POST(request) {
 
     // 2. Disparar para o WhatsApp do paciente e aguardar
     const formattedMessage = `*${title}*\n\n${message}`;
-    const result = await sendWhatsAppMessage(userId, formattedMessage);
+    const result = await sendWhatsAppMessage(userId, formattedMessage, telefone);
     
     if (result && result.success === false) {
       console.error('[API Notifications] Failed to send WhatsApp message:', result.error);

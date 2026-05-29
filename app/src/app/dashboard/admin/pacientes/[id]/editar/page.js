@@ -210,6 +210,7 @@ export default function EditarPacientePage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   userId: userId,
+                  telefone: patient.telefone, // Passa o telefone direto da tela
                   title: 'Plano Atualizado',
                   message: `Seu plano foi alterado para: ${selectedPlan.nome}. Acesse o portal para verificar o status do pagamento.`,
                   link: '/dashboard/paciente/pagamentos'

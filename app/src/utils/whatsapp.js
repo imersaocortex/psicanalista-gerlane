@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
  * @param {string} userId - ID do usuário (auth.uid) no Supabase
  * @param {string} message - Texto da mensagem
  */
-export async function sendWhatsAppMessage(userId, message) {
+export async function sendWhatsAppMessage(userId, message, overridePhone = null) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -48,20 +48,26 @@ export async function sendWhatsAppMessage(userId, message) {
       return { success: false, error: 'Not configured' };
     }
 
-    // 2. Buscar o telefone do paciente associado ao userId
-    const { data: patient, error: patientError } = await supabase
-      .from('pacientes')
-      .select('telefone')
-      .eq('user_id', userId)
-      .maybeSingle();
+    let phone = overridePhone;
 
-    if (patientError || !patient || !patient.telefone) {
-      console.log(`[WhatsApp Service] Patient phone number not found for user ${userId}. Skipping.`);
-      return { success: false, error: 'Phone number not found' };
+    // Se o telefone não veio da tela, buscar no banco (o que falha se não houver Chave Mestra)
+    if (!phone) {
+      const { data: patient, error: patientError } = await supabase
+        .from('pacientes')
+        .select('telefone')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (patientError || !patient || !patient.telefone) {
+        console.log(`[WhatsApp Service] Patient phone number not found for user ${userId}. Skipping.`);
+        return { success: false, error: 'Phone number not found' };
+      }
+      
+      phone = patient.telefone;
     }
 
     // 3. Formatar o número de telefone (remover caracteres especiais e garantir código do país)
-    let phone = patient.telefone.replace(/\D/g, ''); // Apenas números
+    phone = phone.replace(/\D/g, ''); // Apenas números
     
     if (phone.length === 0) {
       console.log('[WhatsApp Service] Formatted phone number is empty.');
