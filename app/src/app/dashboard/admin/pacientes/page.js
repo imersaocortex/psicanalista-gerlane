@@ -6,8 +6,10 @@ import { getInitials } from '@/utils/helpers';
 import Link from 'next/link';
 import styles from './pacientes.module.css';
 import Button from '@/components/ui/Button';
-import { Users, Search as SearchIcon, Plus, Filter, MoreHorizontal } from 'lucide-react';
+import { Users, Search as SearchIcon, Plus, Filter, MoreHorizontal, Trash2 } from 'lucide-react';
 import Skeleton from '@/components/ui/Skeleton';
+import { useToast } from '@/context/ToastContext';
+
 
 export default function PacientesPage() {
   const router = useRouter();
@@ -15,6 +17,7 @@ export default function PacientesPage() {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeMenu, setActiveMenu] = useState(null);
+  const { addToast } = useToast();
   const supabase = createClient();
 
   useEffect(() => {
@@ -23,6 +26,7 @@ export default function PacientesPage() {
         .from('pacientes')
         .select(`
           id,
+          user_id,
           telefone,
           data_nascimento,
           profissao,
@@ -44,6 +48,7 @@ export default function PacientesPage() {
       } else {
         const mapped = data.map(p => ({
           id: p.id,
+          userId: p.user_id,
           name: p.profiles?.nome || 'Paciente sem Nome',
           email: p.profiles?.email || 'Sem e-mail',
           profession: p.profissao || 'Profissão não informada',
@@ -94,8 +99,67 @@ export default function PacientesPage() {
     
     if (!error) {
       setPatients(prev => prev.map(p => p.id === id ? { ...p, status: newStatus } : p));
+      addToast(newStatus === 'ativo' ? 'Paciente reativado com sucesso!' : 'Paciente inativado com sucesso!', 'success');
+    } else {
+      addToast('Erro ao atualizar status do paciente.', 'error');
     }
     setActiveMenu(null);
+  };
+
+  const handleDelete = async (e, id, userId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (confirm('Tem certeza que deseja excluir permanentemente este paciente e todos os seus dados (sessões, pagamentos, anamnese)? Esta ação não pode ser desfeita.')) {
+      setLoading(true);
+      try {
+        // 1. Delete sessoes
+        const { error: sessoesError } = await supabase
+          .from('sessoes')
+          .delete()
+          .eq('paciente_id', id);
+        if (sessoesError) throw sessoesError;
+
+        // 2. Delete pagamentos
+        const { error: pagamentosError } = await supabase
+          .from('pagamentos')
+          .delete()
+          .eq('paciente_id', id);
+        if (pagamentosError) throw pagamentosError;
+
+        // 3. Delete anamneses
+        const { error: anamnesesError } = await supabase
+          .from('anamneses')
+          .delete()
+          .eq('paciente_id', id);
+        if (anamnesesError) throw anamnesesError;
+
+        // 4. Delete pacientes
+        const { error: pacienteError } = await supabase
+          .from('pacientes')
+          .delete()
+          .eq('id', id);
+        if (pacienteError) throw pacienteError;
+
+        // 5. Delete profiles
+        if (userId) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', userId);
+          if (profileError) throw profileError;
+        }
+
+        setPatients(prev => prev.filter(p => p.id !== id));
+        addToast('Paciente excluído com sucesso!', 'success');
+      } catch (error) {
+        console.error('Error deleting patient:', error);
+        addToast(error.message || 'Erro ao excluir paciente.', 'error');
+      } finally {
+        setLoading(false);
+        setActiveMenu(null);
+      }
+    }
   };
 
 
@@ -195,6 +259,13 @@ export default function PacientesPage() {
                     className={`${styles.dropdownItem} ${p.status === 'ativo' ? styles.danger : styles.success}`}
                   >
                     <MoreHorizontal size={16} /> {p.status === 'ativo' ? 'INATIVAR PACIENTE' : 'REATIVAR PACIENTE'}
+                  </button>
+                  <div className={styles.divider} />
+                  <button 
+                    onClick={(e) => handleDelete(e, p.id, p.userId)} 
+                    className={`${styles.dropdownItem} ${styles.danger}`}
+                  >
+                    <Trash2 size={16} /> EXCLUIR PACIENTE
                   </button>
                 </div>
               )}

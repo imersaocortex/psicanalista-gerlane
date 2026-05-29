@@ -192,6 +192,57 @@ export default function PacienteDetalhesPage() {
     }
   };
 
+  const handlePermanentDelete = async () => {
+    if (confirm('Tem certeza que deseja excluir permanentemente este paciente e todos os seus dados (sessões, pagamentos, anamnese)? Esta ação não pode ser desfeita.')) {
+      setLoading(true);
+      try {
+        // 1. Delete sessoes
+        const { error: sessoesError } = await supabase
+          .from('sessoes')
+          .delete()
+          .eq('paciente_id', id);
+        if (sessoesError) throw sessoesError;
+
+        // 2. Delete pagamentos
+        const { error: pagamentosError } = await supabase
+          .from('pagamentos')
+          .delete()
+          .eq('paciente_id', id);
+        if (pagamentosError) throw pagamentosError;
+
+        // 3. Delete anamneses
+        const { error: anamnesesError } = await supabase
+          .from('anamneses')
+          .delete()
+          .eq('paciente_id', id);
+        if (anamnesesError) throw anamnesesError;
+
+        // 4. Delete pacientes
+        const { error: pacienteError } = await supabase
+          .from('pacientes')
+          .delete()
+          .eq('id', id);
+        if (pacienteError) throw pacienteError;
+
+        // 5. Delete profiles
+        if (patient?.user_id) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', patient.user_id);
+          if (profileError) throw profileError;
+        }
+
+        addToast('Paciente excluído com sucesso!', 'success');
+        router.push('/dashboard/admin/pacientes');
+      } catch (error) {
+        console.error('Error deleting patient:', error);
+        addToast(error.message || 'Erro ao excluir paciente.', 'error');
+        setLoading(false);
+      }
+    }
+  };
+
   if (loading) return <div className={styles.loading}>Carregando perfil...</div>;
 
   return (
@@ -204,7 +255,10 @@ export default function PacienteDetalhesPage() {
           <h1>Ficha do Paciente</h1>
           <div className={styles.actions}>
             <Button variant="outline" onClick={handleDelete} className={styles.archiveBtn}>
-              <Trash2 size={16} /> Arquivar
+              Arquivar
+            </Button>
+            <Button variant="danger" onClick={handlePermanentDelete} className={styles.deleteBtn}>
+              <Trash2 size={16} /> Excluir permanentemente
             </Button>
             <Link href={`/dashboard/admin/pacientes/${id}/anamnese`}>
               <Button variant="outline">

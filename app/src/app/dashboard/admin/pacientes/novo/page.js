@@ -21,6 +21,7 @@ export default function NovoPacientePage() {
   const [plans, setPlans] = useState([]);
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [debugStatus, setDebugStatus] = useState('');
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -65,11 +66,13 @@ export default function NovoPacientePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setDebugStatus('Iniciando cadastro...');
 
     try {
       // 1. Photo Upload (if exists)
       let foto_url = null;
       if (photo) {
+        setDebugStatus('Fazendo upload da foto...');
         const fileExt = photo.name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
         const { error: uploadError, data: uploadData } = await supabase.storage
@@ -86,6 +89,7 @@ export default function NovoPacientePage() {
         foto_url = publicUrl;
       }
 
+      setDebugStatus('Chamando API de registro...');
       // 2. Create auth user via our new API to avoid session takeover
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -97,6 +101,7 @@ export default function NovoPacientePage() {
         })
       });
 
+      setDebugStatus('Processando resposta da API...');
       const authDataResponse = await res.json();
       
       if (!res.ok) {
@@ -105,27 +110,33 @@ export default function NovoPacientePage() {
 
       const userId = authDataResponse.user.id;
 
+      setDebugStatus('Atualizando perfil do paciente no banco...');
       // 3. Update patient record (a trigger already creates the initial blank row)
       const { error: patientError } = await supabase
         .from('pacientes')
         .update({
-          telefone: formData.telefone,
-          data_nascimento: formData.data_nascimento,
-          genero: formData.genero,
-          profissao: formData.profissao,
-          endereco: formData.endereco,
-          contato_emergencia: formData.contato_emergencia,
-          notas: formData.notas,
+          telefone: formData.telefone || null,
+          data_nascimento: formData.data_nascimento || null,
+          genero: formData.genero || null,
+          profissao: formData.profissao || null,
+          endereco: formData.endereco || null,
+          contato_emergencia: formData.contato_emergencia || null,
+          notas: formData.notas || null,
           foto_url,
-          plano_id: formData.plano_id,
-          cpf: formData.cpf
+          plano_id: formData.plano_id || null,
+          cpf: formData.cpf || null
         })
         .eq('user_id', userId);
 
-      if (patientError) throw patientError;
+      if (patientError) {
+        console.error("Patient Update Error:", patientError);
+        throw new Error("Erro ao atualizar os dados adicionais do paciente: " + patientError.message);
+      }
       
+      setDebugStatus('Verificando plano e pagamentos...');
       // 4. Create initial payment/invoice
       if (formData.plano_id) {
+        setDebugStatus('Buscando ID do paciente...');
         // Fetch the created patient to get the ID (Supabase .select() on insert is better)
         const { data: newPatient } = await supabase
           .from('pacientes')
@@ -135,24 +146,40 @@ export default function NovoPacientePage() {
           .single();
 
         if (newPatient) {
+          setDebugStatus('Inserindo pagamento...');
           const selectedPlan = plans.find(p => p.id === formData.plano_id);
-          await supabase
-            .from('pagamentos')
-            .insert({
-              paciente_id: newPatient.id,
-              valor: selectedPlan.preco,
-              tipo_plano: selectedPlan.periodicidade || 'avulso',
-              status: formData.status_pagamento,
-              data: new Date().toISOString()
-            });
+          if (selectedPlan) {
+            const { error: paymentError } = await supabase
+              .from('pagamentos')
+              .insert({
+                paciente_id: newPatient.id,
+                valor: selectedPlan.preco,
+                tipo_plano: selectedPlan.periodicidade || 'avulso',
+                status: formData.status_pagamento,
+                data: new Date().toISOString()
+              });
+              
+            if (paymentError) {
+              console.error("Payment Insert Error:", paymentError);
+              // Not throwing here to avoid rolling back the user creation, just log it.
+            }
+          }
         }
       }
 
+      setDebugStatus('Cadastro finalizado com sucesso! Redirecionando...');
+      setLoading(false);
       addToast('Paciente e acesso criados com sucesso! 🚀', 'success');
-      router.push('/dashboard/admin/pacientes');
+      
+      // Delay navigation slightly so the user can see the success message
+      setTimeout(() => {
+        window.location.href = '/dashboard/admin/pacientes';
+      }, 1500);
+      
     } catch (error) {
+      console.error('Registration Error:', error);
+      setDebugStatus(`Erro capturado: ${error.message}`);
       addToast(error.message || 'Erro ao cadastrar paciente', 'error');
-    } finally {
       setLoading(false);
     }
   };
@@ -347,6 +374,12 @@ export default function NovoPacientePage() {
                   </button>
                 </div>
               </div>
+
+              {debugStatus && (
+                <div style={{ marginTop: '2rem', padding: '1rem', background: '#f5f5f5', border: '1px dashed #ccc', borderRadius: '8px', color: '#555', fontSize: '14px', textAlign: 'center' }}>
+                  <strong>Status do Sistema:</strong> <br/> {debugStatus}
+                </div>
+              )}
 
               <div className={styles.actionsBetween} style={{marginTop: '3rem'}}>
                 <Button type="button" variant="outline" onClick={prevStep}>
