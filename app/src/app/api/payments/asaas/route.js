@@ -167,6 +167,17 @@ export async function POST(request) {
       });
 
       asaasPayment = await subscriptionResponse.json();
+
+      // Para assinaturas, o Asaas não retorna o invoiceUrl na raiz. Precisamos buscar a primeira cobrança gerada.
+      if (!asaasPayment.errors && asaasPayment.id) {
+        const chargesResponse = await fetch(`${asaasUrl}/payments?subscription=${asaasPayment.id}`, { headers });
+        const charges = await chargesResponse.json();
+        if (charges.data && charges.data.length > 0) {
+          asaasPayment.invoiceUrl = charges.data[0].invoiceUrl;
+          asaasPayment.bankSlipUrl = charges.data[0].bankSlipUrl;
+          asaasPayment.pixQrCode = charges.data[0].pixQrCode;
+        }
+      }
     } else {
       const paymentBody = {
         customer: customerId,
