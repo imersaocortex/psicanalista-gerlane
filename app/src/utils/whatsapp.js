@@ -88,9 +88,9 @@ export async function sendWhatsAppMessage(userId, message) {
       })
     });
 
-    const result = await response.json();
+    const result = await response.json().catch(() => null);
     if (!response.ok) {
-      throw new Error(result.message || 'Evolution API request failed');
+      throw new Error(`[HTTP ${response.status}] ${result ? JSON.stringify(result) : 'Sem resposta da API'}`);
     }
 
     console.log(`[WhatsApp Service] Message successfully sent to ${phone}`);
