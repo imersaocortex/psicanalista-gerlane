@@ -11,9 +11,17 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated, user, loading } = useAuth();
   const { addToast } = useToast();
   const router = useRouter();
+
+  // If already logged in, redirect immediately!
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      const dest = user.tipo === 'admin' ? '/dashboard/admin' : '/dashboard/paciente';
+      window.location.href = dest;
+    }
+  }, [isAuthenticated, loading, user]);
 
   const handleLogin = async (e) => {
     e?.preventDefault();
@@ -25,14 +33,14 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       console.log('Iniciando tentativa de login para:', email);
-      const user = await login(email, password);
-      console.log('Login bem-sucedido. Perfil:', user.tipo);
+      const loggedUser = await login(email, password);
+      console.log('Login bem-sucedido. Perfil:', loggedUser.tipo);
       
-      addToast(`Bem-vindo(a), ${user.nome || 'usuário'}!`, 'success');
+      addToast(`Bem-vindo(a), ${loggedUser.nome || 'usuário'}!`, 'success');
       
-      // Redirection
-      const dest = user.tipo === 'admin' ? '/dashboard/admin' : '/dashboard/paciente';
-      router.push(dest);
+      // Force hard redirect to bypass Next.js hydration or client-side routing bugs during auth transitions
+      const dest = loggedUser.tipo === 'admin' ? '/dashboard/admin' : '/dashboard/paciente';
+      window.location.href = dest;
     } catch (error) {
       console.error('Erro no login:', error);
       addToast(error.message || 'Erro ao realizar login. Verifique suas credenciais.', 'error');
