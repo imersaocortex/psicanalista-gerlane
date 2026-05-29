@@ -169,6 +169,24 @@ export default function NovoPacientePage() {
 
       setDebugStatus('Cadastro finalizado com sucesso! Redirecionando...');
       setLoading(false);
+
+      // Disparar notificação de boas-vindas
+      try {
+        await fetch('/api/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId,
+            telefone: formData.telefone,
+            title: 'Bem-vindo(a) ao seu Portal!',
+            message: `Olá ${formData.nome.split(' ')[0]}, seu cadastro foi concluído com sucesso. Acesse o sistema usando seu e-mail (${formData.email}) e a senha que definimos para você.`,
+            link: '/dashboard/paciente'
+          })
+        });
+      } catch (err) {
+        console.error('Erro ao notificar novo paciente:', err);
+      }
+
       addToast('Paciente e acesso criados com sucesso! 🚀', 'success');
       
       // Delay navigation slightly so the user can see the success message

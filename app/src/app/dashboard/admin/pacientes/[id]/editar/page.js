@@ -131,6 +131,25 @@ export default function EditarPacientePage() {
     e.preventDefault();
     setSaving(true);
 
+    const notifyPatient = async (title, message, link = '') => {
+      if (!userId) return;
+      try {
+        await fetch('/api/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            telefone: formData.telefone,
+            title,
+            message,
+            link
+          })
+        });
+      } catch (err) {
+        console.error('Erro ao notificar paciente:', err);
+      }
+    };
+
     try {
       let avatarUrl = photoPreview;
 
@@ -183,6 +202,7 @@ export default function EditarPacientePage() {
 
       // 4. Lógica de Pagamentos e Troca de Plano
       const selectedPlan = plans.find(p => p.id === formData.plano_id);
+      let sentSpecificNotification = false;
 
       if (formData.plano_id && formData.plano_id !== originalPlanoId) {
         // O PLANO MUDOU!
@@ -202,29 +222,13 @@ export default function EditarPacientePage() {
              throw invoiceError;
           }
 
-          // Disparar notificação (que envia WhatsApp) avisando da troca
-          if (userId) {
-            try {
-              const res = await fetch('/api/notifications', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  userId: userId,
-                  telefone: formData.telefone, // Passa o telefone direto da tela
-                  title: 'Plano Atualizado',
-                  message: `Seu plano foi alterado para: ${selectedPlan.nome}. Acesse o portal para verificar o status do pagamento.`,
-                  link: '/dashboard/paciente/pagamentos'
-                })
-              });
-              const data = await res.json();
-              if (!res.ok) {
-                 throw new Error(data.error || 'Erro desconhecido na API de notificações');
-              }
-            } catch (err) {
-              console.error('Erro ao notificar troca de plano:', err);
-              addToast(`Falha ao enviar WhatsApp: ${err.message}`, 'error');
-            }
-          }
+          // Disparar notificação avisando da troca
+          await notifyPatient(
+            'Plano Atualizado',
+            `Seu plano foi alterado para: ${selectedPlan.nome}. Acesse o portal para verificar o status do pagamento.`,
+            '/dashboard/paciente/pagamentos'
+          );
+          sentSpecificNotification = true;
         }
       } else if (!lastPayment && isNewPayment && formData.plano_id) {
         // Cadastro inicial de plano sem faturas anteriores
@@ -243,6 +247,24 @@ export default function EditarPacientePage() {
           .from('pagamentos')
           .update({ status: paymentStatus })
           .eq('id', lastPayment.id);
+          
+        if (paymentStatus === 'pago') {
+          await notifyPatient(
+            'Pagamento Confirmado! 🎉',
+            `O seu pagamento no valor de R$ ${lastPayment.valor} foi confirmado manualmente pela clínica. Seu plano está ativo!`,
+            '/dashboard/paciente/pagamentos'
+          );
+          sentSpecificNotification = true;
+        }
+      }
+
+      // Se nenhuma notificação específica (plano ou pagamento) foi enviada, avisa sobre a atualização do perfil
+      if (!sentSpecificNotification) {
+        await notifyPatient(
+          'Atualização de Cadastro',
+          `Olá ${formData.nome.split(' ')[0]}, os dados do seu cadastro foram atualizados no nosso sistema.`,
+          '/dashboard/paciente'
+        );
       }
 
       addToast('Cadastro atualizado com sucesso! ✨', 'success');

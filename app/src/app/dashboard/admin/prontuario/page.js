@@ -59,6 +59,26 @@ export default function ProntuarioAdminPage() {
         .eq('id', selectedPatientId);
 
       if (error) throw error;
+
+      // Disparar notificação de prontuário atualizado
+      if (patientData?.user_id) {
+        try {
+          await fetch('/api/notifications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: patientData.user_id,
+              telefone: patientData.telefone,
+              title: 'Prontuário Atualizado',
+              message: `Olá ${patientData.profiles?.nome?.split(' ')[0] || ''}, seu prontuário clínico foi atualizado pela Dra. Gerlane. Este é um registro seguro e confidencial do seu acompanhamento.`,
+              link: '/dashboard/paciente/prontuario'
+            })
+          });
+        } catch (err) {
+          console.error('Erro ao notificar prontuário:', err);
+        }
+      }
+
       addToast('Prontuário atualizado com sucesso! 📋', 'success');
     } catch (error) {
       addToast('Erro ao salvar prontuário', 'error');

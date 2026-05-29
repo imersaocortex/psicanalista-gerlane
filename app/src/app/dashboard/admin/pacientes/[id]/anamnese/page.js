@@ -36,7 +36,7 @@ export default function AnamneseAdminPage() {
       // Fetch patient
       const { data: p } = await supabase
         .from('pacientes')
-        .select('id, profiles:user_id(nome)')
+        .select('id, user_id, telefone, profiles:user_id(nome)')
         .eq('id', id)
         .single();
       
@@ -142,6 +142,26 @@ export default function AnamneseAdminPage() {
       }
 
       if (error) throw error;
+
+      // Disparar notificação avisando da atualização do prontuário
+      if (patient?.user_id) {
+        try {
+          await fetch('/api/notifications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: patient.user_id,
+              telefone: patient.telefone,
+              title: 'Prontuário Atualizado',
+              message: `Olá ${patient.profiles?.nome?.split(' ')[0] || ''}, seu prontuário clínico foi atualizado pela Dra. Gerlane. Este é um registro seguro e confidencial do seu acompanhamento.`,
+              link: '/dashboard/paciente/prontuario'
+            })
+          });
+        } catch (err) {
+          console.error('Erro ao notificar anamnese:', err);
+        }
+      }
+
       addToast('Anamnese salva com sucesso!', 'success');
       router.push(`/dashboard/admin/pacientes/${id}`);
     } catch (error) {
