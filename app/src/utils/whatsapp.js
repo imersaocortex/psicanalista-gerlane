@@ -86,7 +86,8 @@ export async function sendWhatsAppMessage(userId, message, overridePhone = null)
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': apiKey
+        'apikey': apiKey,
+        'GlobalApiKey': apiKey
       },
       body: JSON.stringify({
         number: phone,
