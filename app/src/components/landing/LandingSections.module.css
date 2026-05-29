@@ -367,12 +367,14 @@
   font-size: 2.5rem;
   margin-bottom: 24px;
   font-family: var(--font-heading);
+  color: white;
 }
 
 .ctaContent p {
   font-size: 1.2rem;
   margin-bottom: 40px;
   opacity: 0.9;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .ctaBigBtn {
