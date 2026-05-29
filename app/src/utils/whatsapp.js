@@ -32,7 +32,11 @@ export async function sendWhatsAppMessage(userId, message) {
 
     const configMap = {};
     configs.forEach(c => {
-      configMap[c.chave] = c.valor;
+      try {
+        configMap[c.chave] = JSON.parse(c.valor);
+      } catch (e) {
+        configMap[c.chave] = c.valor;
+      }
     });
 
     const apiUrl = configMap['evolution_api_url'];

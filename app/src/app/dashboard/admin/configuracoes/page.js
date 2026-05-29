@@ -33,7 +33,12 @@ export default function ConfiguracoesAdminPage() {
       if (data) {
         const configMap = {};
         data.forEach(item => {
-          configMap[item.chave] = item.valor;
+          try {
+            // Remove as aspas extras se foi salvo como string JSON
+            configMap[item.chave] = JSON.parse(item.valor);
+          } catch (e) {
+            configMap[item.chave] = item.valor;
+          }
         });
         setConfigs(prev => ({ ...prev, ...configMap }));
       }
