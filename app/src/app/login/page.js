@@ -15,13 +15,13 @@ export default function LoginPage() {
   const { addToast } = useToast();
   const router = useRouter();
 
-  // If already logged in, redirect immediately!
+  // If already logged in (and not in the middle of submitting), redirect!
   useEffect(() => {
-    if (!loading && isAuthenticated && user) {
+    if (!loading && isAuthenticated && user && !isSubmitting) {
       const dest = user.tipo === 'admin' ? '/dashboard/admin' : '/dashboard/paciente';
-      window.location.href = dest + '?t=' + Date.now();
+      router.replace(dest);
     }
-  }, [isAuthenticated, loading, user]);
+  }, [isAuthenticated, loading, user, isSubmitting, router]);
 
   const handleLogin = async (e) => {
     e?.preventDefault();
@@ -40,7 +40,7 @@ export default function LoginPage() {
       
       // Force hard redirect to bypass Next.js hydration or client-side routing bugs during auth transitions
       const dest = loggedUser.tipo === 'admin' ? '/dashboard/admin' : '/dashboard/paciente';
-      window.location.href = dest + '?t=' + Date.now();
+      window.location.replace(dest);
     } catch (error) {
       console.error('Erro no login:', error);
       addToast(error.message || 'Erro ao realizar login. Verifique suas credenciais.', 'error');

@@ -12,6 +12,8 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
+    // Forçar hard reload no logout para limpar todo o cache e estado do Roteador do Next.js
+    window.location.href = '/login';
   }, [supabase]);
 
   const login = useCallback(async (email, password) => {
