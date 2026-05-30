@@ -7,7 +7,7 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   const logout = useCallback(async () => {
     setLoading(true);
@@ -84,8 +84,18 @@ export function AuthProvider({ children }) {
     };
 
     const handleInitialSession = async () => {
+      let isSettled = false;
+      const timeoutId = setTimeout(() => {
+        if (!isSettled) {
+          console.warn('Timeout na validação de sessão! Forçando abertura para evitar tela travada.');
+          setLoading(false);
+        }
+      }, 4000);
+
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+        
         if (session?.user) {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
@@ -101,6 +111,8 @@ export function AuthProvider({ children }) {
       } catch (err) {
         console.error("Erro ao verificar sessão inicial:", err);
       } finally {
+        isSettled = true;
+        clearTimeout(timeoutId);
         setLoading(false);
       }
     };
