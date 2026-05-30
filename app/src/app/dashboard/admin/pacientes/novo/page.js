@@ -191,7 +191,7 @@ export default function NovoPacientePage() {
       
       // Delay navigation slightly so the user can see the success message
       setTimeout(() => {
-        window.location.href = '/dashboard/admin/pacientes';
+        router.push('/dashboard/admin/pacientes');
       }, 1500);
       
     } catch (error) {
