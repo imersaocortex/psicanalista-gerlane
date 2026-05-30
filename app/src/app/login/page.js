@@ -39,9 +39,9 @@ export default function LoginPage() {
       
       addToast(`Bem-vindo(a), ${loggedUser.nome || 'usuário'}!`, 'success');
       
-      // Force hard redirect to bypass Next.js hydration or client-side routing bugs during auth transitions
+      // Usar a navegação suave do Next.js para evitar tela branca ou travamentos do navegador
       const dest = loggedUser.tipo === 'admin' ? '/dashboard/admin' : '/dashboard/paciente';
-      window.location.href = dest;
+      router.push(dest);
     } catch (error) {
       console.error('Erro no login:', error);
       addToast(error.message || 'Erro ao realizar login. Verifique suas credenciais.', 'error');
