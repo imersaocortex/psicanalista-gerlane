@@ -97,6 +97,7 @@ export default function AnamneseAdminPage() {
       addToast('Erro ao enviar arquivo.', 'error');
     } finally {
       setUploading(false);
+      e.target.value = ''; // Permite selecionar o mesmo arquivo novamente
     }
   };
 
@@ -146,9 +147,13 @@ export default function AnamneseAdminPage() {
       // Disparar notificação avisando da atualização do prontuário
       if (patient?.user_id) {
         try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos de timeout para não travar o save
+
           await fetch('/api/notifications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
             body: JSON.stringify({
               userId: patient.user_id,
               telefone: patient.telefone,
@@ -157,6 +162,7 @@ export default function AnamneseAdminPage() {
               link: '/dashboard/paciente/prontuario'
             })
           });
+          clearTimeout(timeoutId);
         } catch (err) {
           console.error('Erro ao notificar anamnese:', err);
         }

@@ -1,7 +1,14 @@
+import { useState, useEffect } from 'react';
 import { Heart, Brain, Activity, CheckCircle, Quote, File, Paperclip } from 'lucide-react';
 import styles from './AnamneseReport.module.css';
 
 export default function AnamneseReport({ formData, arquivos = [], id = 'anamnese-report' }) {
+  const [dateStr, setDateStr] = useState('');
+
+  useEffect(() => {
+    setDateStr(new Date().toLocaleString());
+  }, []);
+
   return (
     <div className={styles.reportPaper} id={id}>
       <div className={styles.watermark}><Heart size={300} /></div>
@@ -83,7 +90,7 @@ export default function AnamneseReport({ formData, arquivos = [], id = 'anamnese
           </div>
         </section>
 
-        {arquivos.length > 0 && (
+        {arquivos && arquivos.length > 0 && (
           <section className={styles.reportSection}>
             <div className={styles.sectionHeader}>
               <Paperclip size={20} />
@@ -96,9 +103,9 @@ export default function AnamneseReport({ formData, arquivos = [], id = 'anamnese
                     <File size={24} />
                   </div>
                   <div className={styles.fileDetails}>
-                    <span className={styles.fileName}>{file.name}</span>
+                    <span className={styles.fileName}>{file?.name || 'Arquivo'}</span>
                     <span className={styles.fileMeta}>
-                      {(file.size / 1024).toFixed(1)} KB • {new Date(file.createdAt).toLocaleDateString()}
+                      {file?.size ? (file.size / 1024).toFixed(1) : 0} KB • {file?.createdAt ? new Date(file.createdAt).toLocaleDateString() : ''}
                     </span>
                   </div>
                 </div>
@@ -113,7 +120,7 @@ export default function AnamneseReport({ formData, arquivos = [], id = 'anamnese
           <Quote size={20} />
         </div>
         <p>Documento oficial protegido por sigilo ético profissional.</p>
-        <p style={{fontSize: '10px', marginTop: '10px'}}>Gerado em {new Date().toLocaleString()}</p>
+        <p style={{fontSize: '10px', marginTop: '10px'}}>Gerado em {dateStr}</p>
       </div>
     </div>
   );
