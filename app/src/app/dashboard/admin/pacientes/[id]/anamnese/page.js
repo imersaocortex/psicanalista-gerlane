@@ -330,14 +330,28 @@ export default function AnamneseAdminPage() {
                     </span>
                   </div>
                 </div>
-                <button 
-                  type="button" 
-                  onClick={() => handleRemoveFile(file.id)}
-                  className={styles.removeBtn}
-                  title="Remover anexo"
-                >
-                  <Trash2 size={16} />
-                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {file.url && (
+                    <a 
+                      href={file.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className={styles.downloadBtn}
+                      title="Baixar anexo"
+                      style={{ color: 'var(--color-green)', display: 'flex' }}
+                    >
+                      <Download size={16} />
+                    </a>
+                  )}
+                  <button 
+                    type="button" 
+                    onClick={() => handleRemoveFile(file.id)}
+                    className={styles.removeBtn}
+                    title="Remover anexo"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             ))}
             {arquivos.length === 0 && (

@@ -223,3 +223,22 @@
   font-size: 0.7rem;
   color: var(--text-muted);
 }
+
+.downloadBtn {
+  margin-left: auto;
+  color: var(--color-green);
+  background: rgba(0,0,0,0.03);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.downloadBtn:hover {
+  background: var(--color-green);
+  color: white;
+}

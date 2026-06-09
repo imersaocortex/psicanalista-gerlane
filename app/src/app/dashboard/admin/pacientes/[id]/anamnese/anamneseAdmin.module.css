@@ -206,6 +206,23 @@
   color: var(--text-secondary);
 }
 
+.downloadBtn {
+  background: none;
+  border: none;
+  color: var(--color-green);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.downloadBtn:hover {
+  background: rgba(116, 159, 130, 0.1);
+}
+
 .removeBtn {
   background: none;
   border: none;
