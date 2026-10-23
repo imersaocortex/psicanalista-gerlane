@@ -7,7 +7,7 @@ import { createClient } from '@/utils/supabase/client';
 import styles from './Header.module.css';
 import { Search, Bell, LogOut, Menu, User as UserIcon } from 'lucide-react';
 
-export default function Header({ onMenuClick }) {
+export default function Header({ onMenuClick, menuOpen = false }) {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState([]);
@@ -121,7 +121,7 @@ export default function Header({ onMenuClick }) {
     <header className={styles.header}>
       <div className={styles.leftGroup}>
         <div className={styles.mobileLogo}>
-          <Image width={640} height={640} unoptimized src="/images/logo.png" alt="Logo" className={styles.logoImg} /><span style={{fontWeight: 700}}>Acolher</span>
+          <Image width={32} height={32} src="/images/acolher-lotus-192.png" alt="" className={styles.logoImg} /><span style={{fontWeight: 700}}>Acolher</span>
         </div>
 
         {user?.tipo === 'admin' && <form className={styles.search} onSubmit={handleSearch}>
@@ -129,6 +129,7 @@ export default function Header({ onMenuClick }) {
           <input
             type="text"
             placeholder="Pesquisar paciente..."
+            aria-label="Pesquisar paciente"
             className={styles.searchInput}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -201,7 +202,7 @@ export default function Header({ onMenuClick }) {
           </button>
         </div>
 
-        <button className={styles.menuBtn} onClick={onMenuClick} aria-label="Abrir menu">
+        <button className={styles.menuBtn} onClick={onMenuClick} aria-label="Abrir menu" aria-controls="dashboard-menu" aria-expanded={menuOpen}>
           <Menu size={24} />
         </button>
       </div>

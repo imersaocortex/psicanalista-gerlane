@@ -17,6 +17,7 @@
   box-shadow: var(--shadow-xl);
   animation: scaleIn 0.3s ease;
   max-height: 90vh;
+  max-height: calc(100dvh - 32px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -62,9 +63,13 @@
 }
 
 .body {
+  min-height: 0;
+  overscroll-behavior: contain;
   padding: var(--space-xl);
   overflow-y: auto;
 }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes scaleIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+
+@media (max-width: 600px) { .header, .body { padding: 16px; } .closeBtn { min-width: 44px; min-height: 44px; } }

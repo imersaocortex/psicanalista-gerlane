@@ -22,8 +22,8 @@
 
 /* Scroll reveal */
 .reveal {
-  opacity: 0;
-  transform: translateY(40px);
+  opacity: 1;
+  transform: none;
   transition: opacity 1s cubic-bezier(0.2, 1, 0.3, 1), transform 1s cubic-bezier(0.2, 1, 0.3, 1);
 }
 .visible .reveal, .reveal.visible { opacity: 1; transform: translateY(0); }
@@ -97,7 +97,7 @@
 }
 .psyIcon { color: var(--color-green); display: block; margin-bottom: 24px; transition: transform 0.5s ease; }
 .psyCard:hover .psyIcon { transform: scale(1.1) translateY(-5px); }
-.psyCard h4 { margin-bottom: 16px; font-size: var(--text-xl); font-family: var(--font-heading); }
+.psyCard h3 { margin-bottom: 16px; font-size: var(--text-xl); font-family: var(--font-heading); }
 .psyCard p { font-size: var(--text-sm); line-height: 1.7; color: var(--text-muted); }
 
 /* Areas */
@@ -110,7 +110,7 @@
 }
 .areaCard:hover { transform: translateY(-12px); box-shadow: var(--shadow-xl), 0 0 40px rgba(197, 165, 90, 0.15); border-color: var(--color-gold); }
 .areaEmoji { color: var(--color-green); display: block; margin-bottom: 24px; }
-.areaCard h4 { margin-bottom: 16px; font-size: var(--text-lg); }
+.areaCard h3 { margin-bottom: 16px; font-size: var(--text-lg); }
 .areaCard p { font-size: var(--text-sm); line-height: 1.7; color: var(--text-secondary); }
 
 /* Modalities */
@@ -157,7 +157,7 @@
   border-color: var(--color-gold);
 }
 .diffIcon { color: var(--color-gold); display: block; margin-bottom: 24px; }
-.diffCard h4 { color: white; margin-bottom: 12px; font-family: var(--font-heading); }
+.diffCard h3 { color: white; margin-bottom: 12px; font-family: var(--font-heading); }
 .diffCard p { color: var(--color-sage); font-size: var(--text-sm); line-height: 1.7; }
 
 /* Testimonials Carousel */
@@ -476,7 +476,7 @@
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-.contactCardInfo h4 {
+.contactCardInfo h3 {
   font-size: var(--text-sm);
   color: var(--text-muted);
   text-transform: uppercase;
@@ -565,12 +565,12 @@
 
 .footerBrand { flex: 1; max-width: 400px; display: flex; flex-direction: column; gap: 24px; }
 .footerLogo { height: 60px; width: auto; align-self: flex-start; }
-.footerInfo h4 { font-size: var(--text-xl); font-family: var(--font-heading); margin-bottom: 8px; }
+.footerInfo h2 { font-size: var(--text-xl); font-family: var(--font-heading); margin-bottom: 8px; }
 .footerDesc { font-size: var(--text-sm); line-height: 1.6; margin-top: 12px; }
 
 .footerNav { flex: 1.5; display: flex; justify-content: flex-end; gap: 5rem; }
 .footerLinksCol { display: flex; flex-direction: column; gap: 16px; }
-.footerLinksCol h4 { font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+.footerLinksCol h2 { font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
 .footerLinksCol a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: var(--text-sm); transition: all var(--transition-fast); }
 .footerLinksCol a:hover { color: white; transform: translateX(5px); }
 
@@ -664,3 +664,5 @@
   .modalityCard { padding: 40px 20px; }
   .testimonialCardMini { padding: 32px 20px; }
 }
+
+@media (max-width: 480px) { .contactCard { padding: 16px; gap: 12px; } .contactCardInfo { min-width: 0; overflow-wrap: anywhere; } .contactForm { padding: 20px; } .footerLogo { height: auto; max-width: 100%; } }

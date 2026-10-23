@@ -28,13 +28,13 @@ export default function BottomNav({ items }) {
   const navItems = items || defaultItems;
 
   return (
-    <nav className={styles.bottomNav}>
+    <nav className={styles.bottomNav} aria-label="Atalhos do aplicativo">
       {navItems.map((item) => {
         const isActive = pathname === item.href;
         return (
           <Link 
             key={item.href} 
-            href={item.href} 
+            href={item.href} aria-current={isActive ? 'page' : undefined} 
             className={`${styles.navLink} ${isActive ? styles.active : ''}`}
           >
             <span className={styles.icon}>{item.icon}</span>

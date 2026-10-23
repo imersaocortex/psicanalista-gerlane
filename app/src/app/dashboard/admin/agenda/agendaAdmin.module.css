@@ -60,7 +60,7 @@
 
 .weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -288,4 +288,13 @@
   .layout {
     grid-template-columns: 1fr;
   }
+}
+
+@media (max-width: 600px) {
+ .header { flex-direction: column; align-items: flex-start; gap: 16px; }
+ .calendarWrap, .sidePanel { padding: 12px; min-width: 0; }
+ .daysGrid, .weekdays { gap: 3px; }
+ .dayCell { padding: 4px; aspect-ratio: auto; min-height: 48px; min-width: 0; }
+ .navBtn, .tsActions button { min-width: 44px; min-height: 44px; }
+ .calHeader { gap: 8px; }
 }

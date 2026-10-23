@@ -81,3 +81,5 @@
   display: flex;
   justify-content: flex-end;
 }
+
+@media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }

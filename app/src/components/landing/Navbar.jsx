@@ -1,7 +1,8 @@
 'use client';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { useDrawerFocus } from '@/hooks/useDrawerFocus';
 import styles from './Navbar.module.css';
 import { X, Menu, Lock } from 'lucide-react';
 
@@ -9,22 +10,14 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const drawerRef = useRef(null);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  useDrawerFocus(drawerRef, menuOpen, closeMenu);
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-
-    // Prevent scroll when menu is open
-    if (menuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      document.body.style.overflow = 'auto';
-    };
-  }, [menuOpen]);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const navLinks = [
     { label: 'Início', href: '/' },
@@ -36,10 +29,10 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className={`${styles.navbar} ${scrolled ? styles.scrolled : ''}`}>
+      <nav aria-label="Navegação principal" className={`${styles.navbar} ${scrolled ? styles.scrolled : ''}`}>
         <div className={styles.container}>
           <Link href="/" className={styles.logo}>
-            <Image width={640} height={640} unoptimized src="/images/logo.png" alt="Logo Dra. Gerlane" className={styles.logoImg} />
+            <Image width={380} height={83} src="/images/logo.png" alt="Dra. Gerlane Albuquerque — Página inicial" className={styles.logoImg} />
           </Link>
 
           {/* Desktop Links */}
@@ -58,7 +51,7 @@ export default function Navbar() {
           <button
             className={styles.hamburger}
             onClick={() => setMenuOpen(true)}
-            aria-label="Abrir Menu"
+            aria-label="Abrir menu" aria-expanded={menuOpen} aria-controls="landing-menu"
           >
             <Menu size={28} />
           </button>
@@ -66,11 +59,11 @@ export default function Navbar() {
       </nav>
 
       {/* Mobile Sidebar Drawer */}
-      <div className={`${styles.sidebarOverlay} ${menuOpen ? styles.overlayVisible : ''}`} onClick={() => setMenuOpen(false)} />
+      <div aria-hidden="true" className={`${styles.sidebarOverlay} ${menuOpen ? styles.overlayVisible : ''}`} onClick={() => setMenuOpen(false)} />
 
-      <div className={`${styles.mobileSidebar} ${menuOpen ? styles.sidebarOpen : ''}`}>
+      <div id="landing-menu" ref={drawerRef} inert={!menuOpen} className={`${styles.mobileSidebar} ${menuOpen ? styles.sidebarOpen : ''}`}>
         <div className={styles.sidebarHeader}>
-          <Image width={640} height={640} unoptimized src="/images/logo.png" alt="Logo" className={styles.sidebarLogo} />
+          <Image width={380} height={83} src="/images/logo.png" alt="Dra. Gerlane Albuquerque" className={styles.sidebarLogo} />
           <button aria-label="Fechar menu" className={styles.closeBtn} onClick={() => setMenuOpen(false)}>
             <X size={28} />
           </button>

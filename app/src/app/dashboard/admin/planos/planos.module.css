@@ -17,7 +17,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 2rem;
 }
 
@@ -196,3 +196,6 @@
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+.modal { max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; }
+@media (max-width: 600px) { .header { flex-direction: column; align-items: flex-start; gap: 16px; } .modal, .planCard { padding: 20px; } .row { grid-template-columns: 1fr; } .modalFooter { flex-wrap: wrap; } .priceSection { flex-wrap: wrap; } }

@@ -59,6 +59,7 @@ export default function PacienteLayout({ children }) {
 
       <div className={styles.mainWrapper}>
         <Header
+          menuOpen={sidebarOpen}
           onMenuClick={() => setSidebarOpen(true)}
         />
         <main className={styles.content}>{children}</main>

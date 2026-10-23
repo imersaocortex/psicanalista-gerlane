@@ -1,4 +1,6 @@
 'use client';
+import { useRef } from 'react';
+import { useDrawerFocus } from '@/hooks/useDrawerFocus';
 import { useAuth } from '@/context/AuthContext';
 import { getInitials } from '@/utils/helpers';
 import Link from 'next/link';
@@ -35,14 +37,16 @@ const iconMap = {
 
 export default function Sidebar({ items = [], title = "Painel", subtitle = "Gerenciamento", isOpen, onClose }) {
   const pathname = usePathname();
+  const drawerRef = useRef(null);
+  useDrawerFocus(drawerRef, isOpen, onClose);
   const { user } = useAuth();
 
   return (
     <>
       {/* Overlay para mobile */}
-      <div className={`${styles.overlay} ${isOpen ? styles.overlayVisible : ''}`} onClick={onClose} />
+      <div aria-hidden="true" className={`${styles.overlay} ${isOpen ? styles.overlayVisible : ''}`} onClick={onClose} />
 
-      <aside className={`${styles.sidebar} ${isOpen ? styles.mobileOpen : ''}`}>
+      <aside id="dashboard-menu" ref={drawerRef} aria-label="Menu do Acolher" className={`${styles.sidebar} ${isOpen ? styles.mobileOpen : ''}`}>
         <div className={styles.header}>
           <div className={styles.brand}>
             <h2 className={styles.title}>{title}</h2>
@@ -53,15 +57,16 @@ export default function Sidebar({ items = [], title = "Painel", subtitle = "Gere
           </button>
         </div>
 
-        <nav className={styles.nav}>
+        <nav className={styles.nav} aria-label="Navegação do aplicativo">
           {items.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || (item.href.split('/').length > 3 && pathname.startsWith(item.href + '/'));
             const icon = iconMap[item.icon] || item.icon;
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={isActive ? 'page' : undefined}
                 className={`${styles.navLink} ${isActive ? styles.active : ''}`}
                 onClick={onClose}
               >

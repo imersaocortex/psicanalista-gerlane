@@ -208,3 +208,11 @@
     height: 44px;
   }
 }
+
+.mobileSidebar { height: 100dvh; width: min(320px, calc(100vw - 24px)); visibility: hidden; padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)); }
+.sidebarOpen { visibility: visible; }
+.sidebarHeader { flex-shrink: 0; gap: 12px; margin-bottom: 24px; }
+.sidebarLogo { width: calc(100% - 56px); height: auto; }
+.sidebarNav { min-height: 0; overflow-y: auto; overscroll-behavior: contain; gap: 12px; }
+.closeBtn, .hamburger { min-width: 44px; min-height: 44px; }
+@media (max-width: 480px) { .container { padding-inline: 16px; gap: 12px; } .logo { min-width: 0; } .logoImg { height: auto; width: min(230px, 65vw); } }

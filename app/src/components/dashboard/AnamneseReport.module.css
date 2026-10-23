@@ -242,3 +242,5 @@
   background: var(--color-green);
   color: white;
 }
+
+@media screen and (max-width: 600px) { .reportPaper { padding: 20px; } .reportHeader, .clinicInfo { flex-wrap: wrap; gap: 16px; } .reportGrid, .lifestyleGrid, .fileGrid { grid-template-columns: 1fr; } .textBlock { padding: 12px; overflow-wrap: anywhere; } }

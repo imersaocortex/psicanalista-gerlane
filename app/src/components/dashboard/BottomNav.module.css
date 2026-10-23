@@ -48,8 +48,11 @@
   transform: translateY(-2px);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1025px) {
   .bottomNav {
     display: none;
   }
 }
+
+.navLink { min-width: 0; min-height: 44px; }
+.label { overflow-wrap: anywhere; text-align: center; letter-spacing: 0; }

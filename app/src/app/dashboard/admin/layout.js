@@ -70,6 +70,7 @@ export default function AdminLayout({ children }) {
 
       <div className={styles.mainWrapper}>
         <Header
+          menuOpen={sidebarOpen}
           onMenuClick={() => setSidebarOpen(true)}
         />
 

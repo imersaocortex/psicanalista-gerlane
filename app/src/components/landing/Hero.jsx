@@ -1,4 +1,3 @@
-'use client';
 import Image from 'next/image';
 import styles from './Hero.module.css';
 
@@ -15,12 +14,12 @@ export default function Hero() {
         <div className={styles.content}>
           <span className={styles.badge}>✦ Psicanálise Clínica</span>
           <h1 className={styles.title}>
-            Cuidar da sua saúde emocional é um ato de{' '}
-            <span className={styles.highlight}>coragem</span> e{' '}
+            Psicanálise para cuidar da sua saúde emocional com{' '}
+            <span className={styles.highlight}>acolhimento</span> e{' '}
             <span className={styles.highlight}>transformação</span>.
           </h1>
           <p className={styles.subtitle}>
-            Um espaço seguro e acolhedor para você se reconectar consigo mesmo,
+            Com a Dra. Gerlane Albuquerque, encontre um espaço de escuta para se reconectar consigo mesmo,
             compreender suas emoções e trilhar o caminho do autoconhecimento.
           </p>
           <div className={styles.actions}>
@@ -30,7 +29,7 @@ export default function Hero() {
               <span className={styles.ctaArrow}>→</span>
             </a>
             <a href="#sobre" className={styles.ctaSecondary}>
-              Conheça mais
+              Conheça a psicanalista
             </a>
           </div>
           <div className={styles.stats}>
@@ -52,7 +51,7 @@ export default function Hero() {
         </div>
         <div className={styles.visual}>
           <div className={styles.imageFrame}>
-            <Image width={640} height={640} unoptimized src="/images/gerlane.jpg" alt="Dra. Gerlane Albuquerque" className={styles.heroImage} />
+            <Image width={587} height={758} loading="eager" fetchPriority="high" sizes="(max-width: 480px) calc(100vw - 48px), (max-width: 768px) 300px, 380px" src="/images/gerlane.jpg" alt="Dra. Gerlane Albuquerque, psicanalista clínica" className={styles.heroImage} />
             <div className={styles.imageGlow} />
           </div>
           <div className={styles.floatingCard1}>

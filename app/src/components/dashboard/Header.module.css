@@ -245,3 +245,22 @@
   .userText { display: none; }
   .menuBtn { display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--text-primary); cursor: pointer; }
 }
+
+.leftGroup, .search, .user, .userText { min-width: 0; }
+.header { gap: 12px; flex-shrink: 0; }
+.userName { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menuBtn, .notification, .logoutBtn { min-width: 44px; min-height: 44px; flex-shrink: 0; }
+@media (max-width: 1024px) {
+  .header { padding-inline: 16px; }
+  .menuBtn { display: flex; align-items: center; justify-content: center; color: var(--text-primary); }
+  .leftGroup, .actions { gap: 12px; }
+  .search { width: min(260px, 28vw); }
+}
+@media (max-width: 768px) {
+  .header { padding-inline: 8px; }
+  .mobileLogo { display: flex; align-items: center; gap: 6px; }
+  .mobileLogo img { height: 32px; width: 32px; }
+  .search, .divider { display: none; }
+  .leftGroup, .actions, .user { gap: 4px; }
+  .notifDropdown { position: fixed; top: 72px; right: 12px; left: 12px; width: auto; max-height: calc(100dvh - 160px); overflow-y: auto; }
+}
