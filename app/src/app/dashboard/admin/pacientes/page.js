@@ -110,48 +110,17 @@ export default function PacientesPage() {
     setActiveMenu(null);
   };
 
-  const handleDelete = async (e, id, userId) => {
+  const handleDelete = async (e, id) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (confirm('Tem certeza que deseja excluir permanentemente este paciente e todos os seus dados (sessões, pagamentos, anamnese)? Esta ação não pode ser desfeita.')) {
+    if (confirm('Tem certeza que deseja excluir permanentemente este paciente e todos os seus dados (sessões, pagamentos, anamnese)? Esta ação não pode ser desfeita. Se houver cobranças ou assinaturas no Asaas, cancele-as no Asaas antes de excluir o cadastro local.')) {
       setLoading(true);
       try {
-        // 1. Delete sessoes
-        const { error: sessoesError } = await supabase
-          .from('sessoes')
-          .delete()
-          .eq('paciente_id', id);
-        if (sessoesError) throw sessoesError;
-
-        // 2. Delete pagamentos
-        const { error: pagamentosError } = await supabase
-          .from('pagamentos')
-          .delete()
-          .eq('paciente_id', id);
-        if (pagamentosError) throw pagamentosError;
-
-        // 3. Delete anamneses
-        const { error: anamnesesError } = await supabase
-          .from('anamneses')
-          .delete()
-          .eq('paciente_id', id);
-        if (anamnesesError) throw anamnesesError;
-
-        // 4. Delete pacientes
-        const { error: pacienteError } = await supabase
-          .from('pacientes')
-          .delete()
-          .eq('id', id);
-        if (pacienteError) throw pacienteError;
-
-        // 5. Delete profiles
-        if (userId) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .delete()
-            .eq('id', userId);
-          if (profileError) throw profileError;
+        const { error } = await supabase.rpc('acolher_delete_patient', { p_patient: id });
+        if (error) {
+          if (error.code === 'PGRST202') throw new Error('A correção da exclusão de pacientes ainda precisa ser aplicada no banco. Nenhum dado foi excluído.');
+          throw error;
         }
 
         setPatients(prev => prev.filter(p => p.id !== id));

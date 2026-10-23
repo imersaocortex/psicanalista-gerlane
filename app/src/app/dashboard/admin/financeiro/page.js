@@ -64,7 +64,7 @@ export default function FinanceiroPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Tem certeza que deseja excluir esta fatura do paciente?')) return;
+    if (!confirm('Tem certeza que deseja excluir esta fatura do aplicativo? Se ela foi emitida no Asaas, cancele a cobrança ou assinatura no Asaas antes de excluir o registro local.')) return;
 
     try {
       const { error } = await supabase.from('pagamentos').delete().eq('id', id);
@@ -74,7 +74,9 @@ export default function FinanceiroPage() {
       addToast('Fatura excluída com sucesso!', 'success');
     } catch (error) {
       console.error('Erro ao excluir fatura:', error);
-      addToast('Erro ao excluir fatura.', 'error');
+      addToast(error.code === '23503'
+        ? 'Esta fatura possui vínculos. Consulte a clínica para verificar sessões e registros financeiros antes de excluir.'
+        : (error.message || 'Erro ao excluir fatura.'), 'error');
     }
   };
 
