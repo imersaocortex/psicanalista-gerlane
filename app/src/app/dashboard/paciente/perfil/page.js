@@ -1,12 +1,13 @@
 'use client';
 import Image from 'next/image';
+import { formatCPF, isValidCPF, normalizeCPF } from '@/utils/cpf.mjs';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import { useToast } from '@/context/ToastContext';
 import styles from './perfil.module.css';
 import Button from '@/components/ui/Button';
-import { User, Mail, Phone, Calendar, Briefcase, Save, Lock } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Briefcase, Save, Lock, IdCard } from 'lucide-react';
 
 export default function PacientePerfilPage() {
   const { user } = useAuth();
@@ -52,7 +53,7 @@ export default function PacientePerfilPage() {
           telefone: patient.telefone || '',
           data_nascimento: patient.data_nascimento || '',
           profissao: patient.profissao || '',
-          cpf: patient.cpf || '',
+          cpf: formatCPF(patient.cpf),
           genero: patient.genero || '',
           endereco: patient.endereco || '',
           foto_url: patient.foto_url || ''
@@ -66,6 +67,13 @@ export default function PacientePerfilPage() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (saving) return;
+    const cpf = normalizeCPF(formData.cpf);
+    if (cpf && !isValidCPF(cpf)) {
+      addToast('Informe um CPF válido com 11 dígitos.', 'error');
+      document.getElementById('paciente-cpf')?.focus();
+      return;
+    }
     setSaving(true);
     try {
       // 0. Photo Upload
@@ -93,20 +101,24 @@ export default function PacientePerfilPage() {
       if (profileError) throw profileError;
 
       // 2. Update Patient clinical record
-      const { error: patientError } = await supabase
+      const { data: savedPatient, error: patientError } = await supabase
         .from('pacientes')
         .update({
           telefone: formData.telefone,
           data_nascimento: formData.data_nascimento || null,
-          cpf: formData.cpf,
+          cpf: cpf || null,
           profissao: formData.profissao,
           genero: formData.genero,
           endereco: formData.endereco,
           foto_url: currentFotoUrl
         })
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select('id, cpf')
+        .single();
 
       if (patientError) throw patientError;
+      if (!savedPatient) throw new Error('Cadastro do paciente não encontrado.');
+      setFormData(previous => ({ ...previous, cpf: formatCPF(savedPatient.cpf), foto_url: currentFotoUrl }));
 
       addToast('Perfil atualizado com sucesso! ✨', 'success');
     } catch (error) {
@@ -181,18 +193,24 @@ export default function PacientePerfilPage() {
               </div>
 
               <div className={styles.formGroup}>
-                <label>CPF</label>
+                <label htmlFor="paciente-cpf">CPF</label>
                 <div className={styles.inputWrapper}>
-                  <Lock size={16} className={styles.inputIcon} />
+                  <IdCard size={16} className={styles.inputIcon} aria-hidden="true" />
                   <input
+                    id="paciente-cpf"
+                    name="cpf"
                     type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    maxLength={14}
+                    placeholder="000.000.000-00"
+                    aria-describedby="paciente-cpf-ajuda"
                     value={formData.cpf}
-                    disabled
+                    onChange={e => setFormData(previous => ({ ...previous, cpf: formatCPF(e.target.value) }))}
                     className={styles.input}
-                    style={{ opacity: 0.7 }}
                   />
-                  <Lock size={14} className={styles.lockIcon} />
                 </div>
+                <small id="paciente-cpf-ajuda">Você pode preencher ou corrigir seu CPF. Salve em “Atualizar Meu Perfil”.</small>
               </div>
             </div>
 
