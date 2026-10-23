@@ -83,3 +83,12 @@ No financeiro administrativo, use Conferir saldo para conciliar pagamentos antig
 Em Configurações de Pagamento, use Conferir integração Asaas para validar a chave Pix e o webhook e Configurar webhook Asaas para registrar os eventos no endereço público. A variável ASAAS_WEBHOOK_TOKEN deve estar configurada na Vercel. A chave Pix salva deve pertencer à conta Asaas usada pela integração; uma transferência para outra instituição não gera confirmação automática no Asaas.
 
 Os testes em tests/billing.test.mjs usam provedores simulados, sem cobranças reais. tests/billing-database.sql foi executado em esquema isolado com cópias apenas da estrutura das tabelas; o esquema foi removido ao concluir. Nenhum teste cria faturas ou agenda consultas reais.
+
+
+### Verificação de produção em 23/10/2026
+
+A compilação e os testes de cobrança e segurança passaram. As migrações restritas e a compatibilidade dos gatilhos de notificações foram aplicadas; a cadeia de notificações também foi validada com cópias de estrutura e dados sintéticos em esquema isolado, removido ao concluir. Não foram criadas cobranças nem reservas reais nos testes.
+
+A conferência autenticada no aplicativo retornou recusa de acesso do Asaas. A chave de API e suas permissões precisam ser conferidas na conta do gateway antes de validar emissão de Pix e registrar o webhook. A chave Pix de recebimento foi atualizada no banco e ASAAS_WEBHOOK_TOKEN foi configurado na Vercel. O estado de confirmação do gateway não foi homologado com pagamento real.
+
+Uma política antiga de leitura pública das configurações foi bloqueada. Substitua a chave de API do Asaas que estava armazenada sob essa política por uma nova chave, diretamente no painel administrativo; não envie credenciais pelo repositório ou por mensagens.

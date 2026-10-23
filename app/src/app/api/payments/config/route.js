@@ -17,6 +17,7 @@ export async function GET() {
     const db = serviceClient();
     const asaas = await asaasClient(db);
     const config = await systemConfig(db, ['pix_key']);
+    await asaas.request('/payments?limit=1');
     const keys = await asaas.request('/pix/addressKeys?limit=100');
     const webhooks = await asaas.request('/webhooks?limit=100');
     const matchingPix = keys.data?.some(item => item.key === config.pix_key && (!item.status || item.status === 'ACTIVE')) || false;

@@ -16,6 +16,7 @@ export default function FinanceiroConfigPage() {
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(false);
   const [health, setHealth] = useState(null);
+  const [healthError, setHealthError] = useState('');
   const [supabase] = useState(() => createClient());
 
   const [config, setConfig] = useState({
@@ -51,25 +52,25 @@ export default function FinanceiroConfigPage() {
   }, [supabase, user]);
 
   const checkIntegration = async () => {
-    setChecking(true); setHealth(null);
+    setChecking(true); setHealth(null); setHealthError('');
     try {
       const response = await fetch('/api/payments/config', { cache: 'no-store' });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Não foi possível conferir o Asaas.');
       setHealth(result);
-    } catch (error) { addToast(error.message, 'error'); }
+    } catch (error) { setHealthError(error.message); addToast(error.message, 'error'); }
     finally { setChecking(false); }
   };
 
   const configureWebhook = async () => {
-    setChecking(true);
+    setChecking(true); setHealthError('');
     try {
       const response = await fetch('/api/payments/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'configureWebhook' }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Não foi possível configurar o webhook.');
       addToast('Webhook do Asaas configurado.', 'success');
       await checkIntegration();
-    } catch (error) { addToast(error.message, 'error'); }
+    } catch (error) { setHealthError(error.message); addToast(error.message, 'error'); }
     finally { setChecking(false); }
   };
 
@@ -119,6 +120,7 @@ export default function FinanceiroConfigPage() {
       <section aria-live="polite" style={{ marginBottom: 24 }}>
         <Button type="button" variant="outline" onClick={checkIntegration} disabled={checking}>{checking ? 'Conferindo...' : 'Conferir integração Asaas'}</Button>
         <Button type="button" variant="outline" onClick={configureWebhook} disabled={checking}>Configurar webhook Asaas</Button>
+        {healthError && <p role="alert">{healthError}</p>}
         {health && <div>
           <p>Ambiente: {health.environment}. Chave Pix na conta Asaas: {health.matchingPix ? 'conferida' : 'não localizada; confira no Asaas'}.</p>
           <p>Token do webhook: {health.webhookSecretConfigured ? 'configurado' : 'pendente na Vercel'}. Webhook: {health.webhookConfigured ? 'ativo' : 'pendente no Asaas'}.</p>
