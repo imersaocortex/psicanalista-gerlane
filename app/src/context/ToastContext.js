@@ -28,8 +28,7 @@ export function ToastProvider({ children }) {
 
 function ToastContainer({ toasts, removeToast }) {
   return (
-    <div 
-      suppressHydrationWarning
+    <div
       style={{
         position: 'fixed', bottom: '24px', right: '24px',
         display: 'flex', flexDirection: 'column', gap: '12px',
@@ -54,8 +53,7 @@ function ToastItem({ toast, onClose }) {
   const c = colors[toast.type] || colors.success;
 
   return (
-    <div 
-      suppressHydrationWarning
+    <div
       style={{
         background: c.bg, border: `1px solid ${c.border}`, borderRadius: '12px',
         padding: '14px 20px', display: 'flex', alignItems: 'center', gap: '12px',

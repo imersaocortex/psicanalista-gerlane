@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -27,7 +28,7 @@ export default function Header({ onMenuClick }) {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);
-      
+
       if (mounted) {
         setNotifications(data || []);
         const { count } = await supabase
@@ -35,7 +36,7 @@ export default function Header({ onMenuClick }) {
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('lida', false);
-        
+
         setUnreadCount(count || 0);
       }
     };
@@ -50,11 +51,11 @@ export default function Header({ onMenuClick }) {
 
     const channel = supabase
       .channel(`user-notifs-${user.id}`)
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'notificacoes', 
-        filter: `user_id=eq.${user.id}` 
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notificacoes',
+        filter: `user_id=eq.${user.id}`
       }, (payload) => {
         if (mounted) {
           playNotifSound();
@@ -68,7 +69,7 @@ export default function Header({ onMenuClick }) {
       mounted = false;
       supabase.removeChannel(channel);
     };
-  }, [user?.id, supabase]);
+  }, [supabase, user]);
 
   const markAsRead = async () => {
     if (unreadCount === 0) return;
@@ -77,7 +78,7 @@ export default function Header({ onMenuClick }) {
       .update({ lida: true })
       .eq('user_id', user.id)
       .eq('lida', false);
-    
+
     setUnreadCount(0);
     setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
   };
@@ -87,7 +88,7 @@ export default function Header({ onMenuClick }) {
       .from('notificacoes')
       .delete()
       .eq('user_id', user.id);
-    
+
     setNotifications([]);
     setUnreadCount(0);
     setShowNotifs(false);
@@ -95,7 +96,7 @@ export default function Header({ onMenuClick }) {
 
   const handleNotifClick = async (n) => {
     setShowNotifs(false);
-    if (n.link) {
+    if (typeof n.link === 'string' && n.link.startsWith('/dashboard/') && !n.link.includes('\\')) {
       router.push(n.link);
     }
     if (!n.lida) {
@@ -120,25 +121,25 @@ export default function Header({ onMenuClick }) {
     <header className={styles.header}>
       <div className={styles.leftGroup}>
         <div className={styles.mobileLogo}>
-          <img src="/images/logo.png" alt="Logo" className={styles.logoImg} />
+          <Image width={640} height={640} unoptimized src="/images/logo.png" alt="Logo" className={styles.logoImg} /><span style={{fontWeight: 700}}>Acolher</span>
         </div>
-        
-        <form className={styles.search} onSubmit={handleSearch}>
+
+        {user?.tipo === 'admin' && <form className={styles.search} onSubmit={handleSearch}>
           <Search size={16} className={styles.searchIcon} />
-          <input 
-            type="text" 
-            placeholder="Pesquisar paciente..." 
-            className={styles.searchInput} 
+          <input
+            type="text"
+            placeholder="Pesquisar paciente..."
+            className={styles.searchInput}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </form>
+        </form>}
       </div>
 
       <div className={styles.actions}>
         <div className={styles.notifWrapper}>
-          <button 
-            className={`${styles.notification} ${styles.desktopNotification}`}
+          <button
+            aria-label="Notificações" className={styles.notification}
             onClick={() => {
               setShowNotifs(!showNotifs);
               if (!showNotifs) markAsRead();
@@ -160,8 +161,8 @@ export default function Header({ onMenuClick }) {
               </div>
               <div className={styles.notifList}>
                 {notifications.length > 0 ? notifications.map(n => (
-                  <div 
-                    key={n.id} 
+                  <div
+                    key={n.id}
                     className={`${styles.notifItem} ${!n.lida ? styles.unread : ''}`}
                     onClick={() => handleNotifClick(n)}
                   >
@@ -186,7 +187,7 @@ export default function Header({ onMenuClick }) {
           <div className={styles.divider} />
           <div className={styles.userAvatar}>
             {user?.foto_url || user?.avatar_url ? (
-              <img src={user.foto_url || user.avatar_url} alt="Avatar" className={styles.avatarImg} />
+              <Image width={640} height={640} unoptimized src={user.foto_url || user.avatar_url} alt="Avatar" className={styles.avatarImg} />
             ) : (
               <div className={styles.avatarPlaceholder}><UserIcon size={16} /></div>
             )}

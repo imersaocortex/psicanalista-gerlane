@@ -203,6 +203,24 @@
   animation: spin 0.8s linear infinite;
 }
 
+.appMark { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 12px; color: var(--color-green); border-radius: 22px; background: var(--color-mint); }
+.header .appName { font-family: 'Playfair Display', Georgia, serif; font-size: 3rem; font-weight: 500; }
+.header .slogan { color: var(--color-green); font-size: 0.95rem; }
+.header .professional { margin-top: 10px; font-size: 0.75rem; }
+.formTitle { margin-bottom: 20px; font-size: 1.2rem; text-align: center; }
+.passwordField { position: relative; }
+.passwordField input { padding-right: 48px; }
+.passwordField button { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: transparent; border: 0; color: var(--color-green); cursor: pointer; }
+.authLinks { margin-top: 24px; display: grid; gap: 16px; text-align: center; font-size: 0.88rem; }
+.authLinks a, .consent a { color: var(--color-green); text-decoration: underline; text-underline-offset: 3px; }
+.consent { display: flex; gap: 10px; align-items: flex-start; font-size: 0.82rem; line-height: 1.6; }
+.consent input { margin-top: 6px; accent-color: var(--color-green); }
+.error, .success { padding: 16px; border-radius: 12px; margin-bottom: 20px; line-height: 1.6; font-size: 0.9rem; }
+.error { color: #862626; background: #fff0f0; }
+.success { color: var(--color-green-dark); background: var(--color-mint); display: grid; gap: 12px; }
+.success a { text-decoration: underline; }
+.formGroup small { color: var(--text-secondary); }
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

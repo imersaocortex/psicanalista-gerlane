@@ -14,7 +14,7 @@ export default function AdminAgendaPage() {
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState(new Date().getDate());
   const { addToast } = useToast();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -43,7 +43,7 @@ export default function AdminAgendaPage() {
     }
 
     fetchMonthSessions();
-  }, [year, month]);
+  }, [year, month, supabase]);
 
   const handleUpdateStatus = async (sessionId, newStatus) => {
     try {
@@ -62,10 +62,10 @@ export default function AdminAgendaPage() {
 
         if (patientUserId && (newStatus === 'confirmada' || newStatus === 'cancelada')) {
           const title = newStatus === 'confirmada' ? 'Sessão Confirmada! 📅' : 'Sessão Cancelada ❌';
-          const message = newStatus === 'confirmada' 
+          const message = newStatus === 'confirmada'
             ? `Olá ${patientName}, sua sessão com a Dra. Gerlane no dia ${sessionDateFormatted} foi confirmada.`
             : `Olá ${patientName}, sua sessão com a Dra. Gerlane no dia ${sessionDateFormatted} foi cancelada.`;
-          
+
           fetch('/api/notifications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -151,8 +151,8 @@ export default function AdminAgendaPage() {
               const isToday = day && new Date().getDate() === day && new Date().getMonth() === month && new Date().getFullYear() === year;
               const isSelected = day === selectedDay;
               return (
-                <div 
-                  key={i} 
+                <div
+                  key={i}
                   className={`${styles.dayCell} ${!day ? styles.empty : ''} ${isToday ? styles.today : ''} ${isSelected ? styles.selected : ''}`}
                   onClick={() => day && setSelectedDay(day)}
                 >
@@ -178,7 +178,7 @@ export default function AdminAgendaPage() {
             <h3>Sessões para o Dia</h3>
             <span className={styles.dateLabel}>{selectedDateStr}</span>
           </div>
-          
+
           <div className={styles.todayList}>
             {selectedDaySessions.length > 0 ? selectedDaySessions.map(s => (
               <div key={s.id} className={styles.todaySession}>
@@ -190,7 +190,7 @@ export default function AdminAgendaPage() {
                   </div>
                   <span className={styles.tsBadge} style={{ color: getStatusColor(s.status), background: getStatusBg(s.status) }}>{s.status}</span>
                 </div>
-                
+
                 <div className={styles.tsActions}>
                   {s.status === 'pendente' && (
                     <button onClick={() => handleUpdateStatus(s.id, 'confirmada')} title="Confirmar" className={styles.confirmBtn}>

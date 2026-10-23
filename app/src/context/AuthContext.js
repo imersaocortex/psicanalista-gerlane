@@ -1,170 +1,70 @@
 'use client';
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-
 const AuthContext = createContext();
-
+async function loadProfile(db, authUser) {
+  const { data: profile, error } = await db.from('profiles').select('*').eq('id', authUser.id).single();
+  if (error || !['admin', 'paciente'].includes(profile?.tipo)) throw new Error('Seu perfil não está disponível. Entre em contato com a clínica.');
+  return { ...authUser, ...profile, id: authUser.id };
+}
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [supabase] = useState(() => createClient());
-
+  const version = useRef(0);
+  const currentUser = useRef(null);
   const logout = useCallback(async () => {
-    setLoading(true);
-    await supabase.auth.signOut();
-    setUser(null);
-    
-    // Limpeza Profunda de Cache do PWA e Navegador
-    if (typeof window !== 'undefined') {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-      const cookies = document.cookie.split("; ");
-      for (let c = 0; c < cookies.length; c++) {
-        const d = window.location.hostname.split(".");
-        while (d.length > 0) {
-          const cookieBase = encodeURIComponent(cookies[c].split(";")[0].split("=")[0]) + '=; expires=Thu, 01-Jan-1970 00:00:01 GMT; domain=' + d.join('.') + ' ;path=';
-          const p = location.pathname.split('/');
-          document.cookie = cookieBase + '/';
-          while (p.length > 0) {
-            document.cookie = cookieBase + p.join('/');
-            p.pop();
-          }
-          d.shift();
-        }
-      }
-    }
-
-    // Forçar hard reload no logout para limpar todo o cache e estado do Roteador do Next.js
-    window.location.href = '/login';
+    version.current++; currentUser.current = null; setUser(null); setLoading(true);
+    try { await supabase.auth.signOut({ scope: 'local' }); }
+    finally { window.location.replace('/login'); }
   }, [supabase]);
-
   const login = useCallback(async (email, password) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) throw error;
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
-
-      if (profileError) {
-        console.warn("Aviso ao buscar perfil no login:", profileError);
-      }
-
-      const userData = { ...data.user, ...profile };
-      setUser(userData);
-      return userData;
-    } finally {
-      setLoading(false);
-    }
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (error) throw new Error(error.status === 0 || error.name === 'AuthRetryableFetchError' ? 'Não foi possível conectar ao serviço de acesso. Verifique sua conexão e tente novamente.' : 'Não foi possível entrar. Verifique seu e-mail, senha e a confirmação do e-mail.');
+      const profile = await loadProfile(supabase, data.user);
+      currentUser.current = profile; setUser(profile); return profile;
+    } catch (error) {
+      setUser(null); currentUser.current = null; await supabase.auth.signOut({ scope: 'local' }); throw error;
+    } finally { setLoading(false); }
   }, [supabase]);
-
   useEffect(() => {
-    // Registrar o Service Worker (PWA)
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch((err) => console.log('SW registration failed: ', err));
-    }
-
-    let inactivityTimer;
-
+    let active = true;
+    let deferred;
+    const restore = async (authUser) => {
+      const token = ++version.current;
+      try {
+        const profile = authUser ? await loadProfile(supabase, authUser) : null;
+        if (active && token === version.current) { currentUser.current = profile; setUser(profile); }
+      } catch {
+        if (active && token === version.current) { currentUser.current = null; setUser(null); }
+      } finally { if (active && token === version.current) setLoading(false); }
+    };
+    supabase.auth.getUser().then(({ data }) => restore(data.user)).catch(() => restore(null));
+    // Keep this callback synchronous to avoid holding Supabase's auth lock during a database request.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') return;
+      clearTimeout(deferred); deferred = setTimeout(() => restore(session?.user || null), 0);
+    });
+    let inactivity;
     const resetTimer = () => {
-      if (inactivityTimer) clearTimeout(inactivityTimer);
-      // 10 minutes = 600,000 ms
-      inactivityTimer = setTimeout(() => {
-        console.log('Logging out due to inactivity');
-        logout();
-      }, 600000);
+      clearTimeout(inactivity);
+      if (currentUser.current) inactivity = setTimeout(logout, 600000);
     };
-
-    const handleInitialSession = async () => {
-      let isSettled = false;
-      const timeoutId = setTimeout(() => {
-        if (!isSettled) {
-          console.warn('Timeout na validação de sessão! Forçando abertura para evitar tela travada.');
-          setLoading(false);
-        }
-      }, 4000);
-
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
-        
-        if (session?.user) {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-            
-          if (profileError) console.warn("Aviso ao restaurar perfil:", profileError);
-          
-          setUser({ ...session.user, ...profile });
-          resetTimer();
-        }
-      } catch (err) {
-        console.error("Erro ao verificar sessão inicial:", err);
-      } finally {
-        isSettled = true;
-        clearTimeout(timeoutId);
-        setLoading(false);
-      }
-    };
-
-    handleInitialSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      try {
-        if (session?.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          setUser({ ...session.user, ...profile });
-          resetTimer();
-        } else {
-          setUser(null);
-          if (inactivityTimer) clearTimeout(inactivityTimer);
-        }
-      } catch (err) {
-        console.error("Erro ao mudar estado de auth:", err);
-      } finally {
-        setLoading(false);
-      }
-    });
-
-    // Activity listeners
-    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-    activityEvents.forEach(event => {
-      window.addEventListener(event, resetTimer);
-    });
-
+    const events = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, resetTimer, { passive: true }));
+    const interval = setInterval(() => { if (currentUser.current && !inactivity) resetTimer(); }, 1000);
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
     return () => {
-      subscription.unsubscribe();
-      if (inactivityTimer) clearTimeout(inactivityTimer);
-      activityEvents.forEach(event => {
-        window.removeEventListener(event, resetTimer);
-      });
+      active = false; subscription.unsubscribe(); clearTimeout(deferred); clearTimeout(inactivity); clearInterval(interval);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
     };
   }, [supabase, logout]);
-
-  return (
-    <AuthContext.Provider value={{ user, login, logout, loading, isAuthenticated: !!user }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, login, logout, loading, isAuthenticated: !!user }}>{children}</AuthContext.Provider>;
 }
-
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
-};
-
+}

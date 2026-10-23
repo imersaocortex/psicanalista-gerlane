@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
+const subscribeDate = () => () => {};
+const serverDate = () => '';
+let reportDate = '';
+const currentDate = () => reportDate || (reportDate = new Date().toLocaleString('pt-BR'));
 import { Heart, Brain, Activity, CheckCircle, Quote, File, Paperclip, Download } from 'lucide-react';
 import styles from './AnamneseReport.module.css';
 
 export default function AnamneseReport({ formData, arquivos = [], id = 'anamnese-report' }) {
-  const [dateStr, setDateStr] = useState('');
-
-  useEffect(() => {
-    setDateStr(new Date().toLocaleString());
-  }, []);
+  const dateStr = useSyncExternalStore(subscribeDate, currentDate, serverDate);
 
   return (
     <div className={styles.reportPaper} id={id}>
@@ -108,8 +108,8 @@ export default function AnamneseReport({ formData, arquivos = [], id = 'anamnese
                       {file?.size ? (file.size / 1024).toFixed(1) : 0} KB • {file?.createdAt ? new Date(file.createdAt).toLocaleDateString() : ''}
                     </span>
                   </div>
-                  {file?.url && (
-                    <a href={file.url} target="_blank" rel="noopener noreferrer" className={styles.downloadBtn} title="Baixar Arquivo">
+                  {file?.id && (
+                    <a href={'/api/documents?file=' + encodeURIComponent(file.id)} target="_blank" rel="noopener noreferrer" className={styles.downloadBtn} title="Baixar Arquivo">
                       <Download size={18} />
                     </a>
                   )}

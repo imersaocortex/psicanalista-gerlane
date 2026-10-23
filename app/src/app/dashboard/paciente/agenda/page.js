@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -23,7 +23,7 @@ export default function AgendaPage() {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [hasPendingPayment, setHasPendingPayment] = useState(false);
   const [viewingDetails, setViewingDetails] = useState(null); // Data selecionada para ver detalhes
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -32,14 +32,8 @@ export default function AgendaPage() {
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const weekDays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
-  useEffect(() => {
-    if (!user) return;
-    fetchSessions();
-    fetchAvailability();
-  }, [user, year, month]);
 
-  async function fetchSessions() {
-    setLoading(true);
+  const fetchSessions = useCallback(async () => {
     try {
       const { data: patient } = await supabase
         .from('pacientes')
@@ -57,7 +51,7 @@ export default function AgendaPage() {
           .eq('paciente_id', patient.id)
           .gte('data', startOfMonth)
           .lte('data', endOfMonth);
-        
+
         setSessions(data || []);
 
         // Verificação de pagamentos pendentes
@@ -65,8 +59,8 @@ export default function AgendaPage() {
           .from('pagamentos')
           .select('id')
           .eq('paciente_id', patient.id)
-          .eq('status', 'pendente');
-        
+          .in('status', ['pendente', 'vencido']);
+
         setHasPendingPayment(payments?.length > 0);
       }
     } catch (error) {
@@ -74,12 +68,19 @@ export default function AgendaPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase, user, year, month]);
 
-  async function fetchAvailability() {
+  const fetchAvailability = useCallback(async () => {
     const { data } = await supabase.from('disponibilidade').select('*');
     setAvailability(data || []);
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    Promise.resolve().then(() => { if (active) { fetchSessions(); fetchAvailability(); } });
+    return () => { active = false; };
+  }, [user, year, month, fetchSessions, fetchAvailability]);
 
   const handleRequestSession = () => {
     if (hasPendingPayment) {
@@ -103,7 +104,7 @@ export default function AgendaPage() {
   const getSessionsForDay = (day) => {
     if (!day) return [];
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return sessions.filter(s => s.data.startsWith(dateStr));
+    return sessions.filter(s => { const d = new Date(s.data); return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day; });
   };
 
   const getAvailableTimesForDate = (date) => {
@@ -111,13 +112,13 @@ export default function AgendaPage() {
     const dayOfWeek = weekDays[date.getDay()];
     const dayAvailability = availability.find(a => a.dia_semana === dayOfWeek);
     if (!dayAvailability) return [];
-    
+
     // Filter out booked slots
     return dayAvailability.horarios.filter(slot => !bookedSlots.includes(slot));
   };
 
   const handleConfirmRequest = async () => {
-    if (!selectedDate || !selectedTime) return;
+    if (!selectedDate || !selectedTime || !selectedModality || requesting) return;
     setRequesting(true);
     try {
       const { data: patient, error: patientError } = await supabase
@@ -152,22 +153,13 @@ export default function AgendaPage() {
       if (countError) throw countError;
 
       const monthSessionsCount = monthSessions?.length || 0;
-      const limit = patient.planos?.limite_sessoes || 4; // Padrão de 4 se não houver plano configurado
+      if (!patient.planos) throw new Error('Escolha um plano ou entre em contato com a clínica para agendar.');
+      const limit = patient.planos.limite_sessoes; // Padrão de 4 se não houver plano configurado
 
       console.log(`[Session Limit Validation] Month: ${monthNames[reqMonth]}, Limit: ${limit}, Scheduled: ${monthSessionsCount}`);
 
       if (monthSessionsCount >= limit) {
         // Disparar notificação e mensagem de WhatsApp via Evolution API alertando o paciente
-        fetch('/api/notifications', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.id,
-            title: 'Limite de Sessões Atingido ⚠️',
-            message: `Você tentou agendar uma sessão para o dia ${sessionDate.toLocaleDateString('pt-BR')} às ${selectedTime}, mas atingiu o limite de ${limit} sessões contratadas para este mês (${monthNames[reqMonth]}). Caso queira agendar mais sessões, fale com a Dra. Gerlane para adquirir uma sessão avulsa ou faça o upgrade do seu plano.`,
-            link: '/dashboard/paciente/planos'
-          })
-        }).catch(err => console.error('[Session Limit WhatsApp Alert Error]', err));
 
         throw new Error(`Você atingiu o limite de ${limit} sessões para este mês (${monthNames[reqMonth]}). Atualmente você possui ${monthSessionsCount} sessões ativas. Para agendar mais, adquira uma sessão avulsa ou faça o upgrade do seu plano.`);
       }
@@ -184,16 +176,6 @@ export default function AgendaPage() {
       if (error) throw error;
 
       // Disparar notificação de sucesso para o próprio paciente
-      fetch('/api/notifications', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          title: 'Agendamento Solicitado 📅',
-          message: `Olá! Seu pedido de agendamento para o dia ${sessionDate.toLocaleDateString('pt-BR')} às ${selectedTime} foi enviado com sucesso para a clínica. Avisaremos assim que for confirmado!`,
-          link: '/dashboard/paciente/agenda'
-        })
-      }).catch(err => console.error(err));
 
       addToast('Solicitação enviada! Aguarde a confirmação da clínica.', 'success');
       setIsModalOpen(false);
@@ -254,13 +236,13 @@ export default function AgendaPage() {
         <div className={styles.daysGrid}>
           {days.map((day, i) => {
             if (!day) return <div key={i} className={`${styles.dayCell} ${styles.empty}`}></div>;
-            
+
             const daySessions = getSessionsForDay(day);
             const isToday = day === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
 
             return (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className={`${styles.dayCell} ${isToday ? styles.today : ''} ${daySessions.length > 0 ? styles.hasSession : ''}`}
                 onClick={() => handleDayClick(day)}
               >
@@ -306,12 +288,12 @@ export default function AgendaPage() {
               <h3><Clock size={20} /> Solicitar Novo Horário</h3>
               <button onClick={() => setIsModalOpen(false)}><X size={20} /></button>
             </div>
-            
+
             <div className={styles.modalBody}>
               <div className={styles.formGroup}>
                 <label>Selecione a Data</label>
-                <input 
-                  type="date" 
+                <input
+                  type="date"
                   min={new Date().toISOString().split('T')[0]}
                   onChange={async (e) => {
                     const dateStr = e.target.value;
@@ -319,23 +301,19 @@ export default function AgendaPage() {
                     setSelectedDate(dateObj);
                     setSelectedTime(null);
                     setSelectedModality(null);
-                    
+
                     // Fetch all booked slots for this day
                     const startOfDay = new Date(dateStr + 'T00:00:00').toISOString();
                     const endOfDay = new Date(dateStr + 'T23:59:59').toISOString();
-                    
-                    const { data: booked } = await supabase
-                      .from('sessoes')
-                      .select('data')
-                      .gte('data', startOfDay)
-                      .lte('data', endOfDay)
-                      .neq('status', 'cancelada');
-                    
+
+                    const { data: booked, error: bookedError } = await supabase.rpc('booked_session_slots', { p_day: dateStr });
+                    if (bookedError) { addToast('Não foi possível consultar os horários. Tente novamente.', 'error'); return; }
+
                     const times = booked?.map(s => {
                       const d = new Date(s.data);
                       return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
                     }) || [];
-                    
+
                     setBookedSlots(times);
                   }}
                 />
@@ -347,8 +325,8 @@ export default function AgendaPage() {
                   <div className={styles.timeGrid}>
                     {getAvailableTimesForDate(selectedDate).length > 0 ? (
                       getAvailableTimesForDate(selectedDate).map(time => (
-                        <button 
-                          key={time} 
+                        <button
+                          key={time}
                           className={`${styles.timeBtn} ${selectedTime === time ? styles.selectedTime : ''}`}
                           onClick={() => setSelectedTime(time)}
                         >
@@ -366,13 +344,13 @@ export default function AgendaPage() {
                 <div className={styles.modalitySection}>
                   <label>Selecione a Modalidade</label>
                   <div className={styles.modalityGrid}>
-                    <button 
+                    <button
                       className={`${styles.modalityBtn} ${selectedModality === 'presencial' ? styles.activeModality : ''}`}
                       onClick={() => setSelectedModality('presencial')}
                     >
                       <Building2 size={18} /> Presencial
                     </button>
-                    <button 
+                    <button
                       className={`${styles.modalityBtn} ${selectedModality === 'online' ? styles.activeModality : ''}`}
                       onClick={() => setSelectedModality('online')}
                     >
@@ -385,8 +363,8 @@ export default function AgendaPage() {
 
             <div className={styles.modalFooter}>
               <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-              <Button 
-                onClick={handleConfirmRequest} 
+              <Button
+                onClick={handleConfirmRequest}
                 disabled={!selectedDate || !selectedTime || !selectedModality || requesting}
               >
                 {requesting ? 'Enviando...' : 'Confirmar Solicitação'}

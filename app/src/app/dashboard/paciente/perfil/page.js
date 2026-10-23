@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/utils/supabase/client';
@@ -26,7 +27,7 @@ export default function PacientePerfilPage() {
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
 
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     if (!user) return;
@@ -61,7 +62,7 @@ export default function PacientePerfilPage() {
       setLoading(false);
     }
     fetchProfile();
-  }, [user]);
+  }, [supabase, user]);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -75,8 +76,9 @@ export default function PacientePerfilPage() {
         const { error: uploadError } = await supabase.storage
           .from('clinica_media')
           .upload(`avatars/${fileName}`, photo);
-        
-        if (!uploadError) {
+
+        if (uploadError) throw uploadError;
+        {
           const { data: { publicUrl } } = supabase.storage.from('clinica_media').getPublicUrl(`avatars/${fileName}`);
           currentFotoUrl = publicUrl;
         }
@@ -95,7 +97,8 @@ export default function PacientePerfilPage() {
         .from('pacientes')
         .update({
           telefone: formData.telefone,
-          data_nascimento: formData.data_nascimento,
+          data_nascimento: formData.data_nascimento || null,
+          cpf: formData.cpf,
           profissao: formData.profissao,
           genero: formData.genero,
           endereco: formData.endereco,
@@ -132,18 +135,18 @@ export default function PacientePerfilPage() {
           <div className={styles.photoSection}>
             <div className={styles.avatarContainer}>
               {photoPreview ? (
-                <img src={photoPreview} alt="Avatar" className={styles.avatarImg} />
+                <Image width={640} height={640} unoptimized src={photoPreview} alt="Avatar" className={styles.avatarImg} />
               ) : (
                 <div className={styles.avatarPlaceholder}><User size={40} /></div>
               )}
               <label htmlFor="photo-upload" className={styles.photoLabel}>
                 <Save size={16} />
               </label>
-              <input 
-                id="photo-upload" 
-                type="file" 
-                hidden 
-                accept="image/*" 
+              <input
+                id="photo-upload"
+                type="file"
+                hidden
+                accept="image/*"
                 onChange={(e) => {
                   const file = e.target.files[0];
                   if (file) {
@@ -152,7 +155,7 @@ export default function PacientePerfilPage() {
                     reader.onloadend = () => setPhotoPreview(reader.result);
                     reader.readAsDataURL(file);
                   }
-                }} 
+                }}
               />
             </div>
             <div className={styles.photoInfo}>
@@ -167,7 +170,7 @@ export default function PacientePerfilPage() {
                 <label>Nome Completo</label>
                 <div className={styles.inputWrapper}>
                   <User size={16} className={styles.inputIcon} />
-                  <input 
+                  <input
                     type="text"
                     value={formData.nome}
                     onChange={e => setFormData({ ...formData, nome: e.target.value })}
@@ -181,7 +184,7 @@ export default function PacientePerfilPage() {
                 <label>CPF</label>
                 <div className={styles.inputWrapper}>
                   <Lock size={16} className={styles.inputIcon} />
-                  <input 
+                  <input
                     type="text"
                     value={formData.cpf}
                     disabled
@@ -197,7 +200,7 @@ export default function PacientePerfilPage() {
               <label>E-mail</label>
               <div className={styles.inputWrapper}>
                 <Mail size={16} className={styles.inputIcon} />
-                <input 
+                <input
                   type="email"
                   value={formData.email}
                   disabled
@@ -213,7 +216,7 @@ export default function PacientePerfilPage() {
                 <label>Telefone</label>
                 <div className={styles.inputWrapper}>
                   <Phone size={16} className={styles.inputIcon} />
-                  <input 
+                  <input
                     type="text"
                     value={formData.telefone}
                     onChange={e => setFormData({ ...formData, telefone: e.target.value })}
@@ -224,7 +227,7 @@ export default function PacientePerfilPage() {
               </div>
               <div className={styles.formGroup}>
                 <label>Gênero</label>
-                <select 
+                <select
                   value={formData.genero}
                   onChange={e => setFormData({ ...formData, genero: e.target.value })}
                   className={styles.input}
@@ -242,7 +245,7 @@ export default function PacientePerfilPage() {
                 <label>Data de Nascimento</label>
                 <div className={styles.inputWrapper}>
                   <Calendar size={16} className={styles.inputIcon} />
-                  <input 
+                  <input
                     type="date"
                     value={formData.data_nascimento}
                     onChange={e => setFormData({ ...formData, data_nascimento: e.target.value })}
@@ -254,7 +257,7 @@ export default function PacientePerfilPage() {
                 <label>Profissão</label>
                 <div className={styles.inputWrapper}>
                   <Briefcase size={16} className={styles.inputIcon} />
-                  <input 
+                  <input
                     type="text"
                     value={formData.profissao}
                     onChange={e => setFormData({ ...formData, profissao: e.target.value })}
@@ -266,7 +269,7 @@ export default function PacientePerfilPage() {
 
             <div className={styles.formGroup}>
               <label>Endereço Residencial</label>
-              <textarea 
+              <textarea
                 value={formData.endereco}
                 onChange={e => setFormData({ ...formData, endereco: e.target.value })}
                 className={styles.input}

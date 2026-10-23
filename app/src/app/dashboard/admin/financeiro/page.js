@@ -14,7 +14,7 @@ export default function FinanceiroPage() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     async function fetchPayments() {
@@ -24,7 +24,7 @@ export default function FinanceiroPage() {
       const { data: patients } = await supabase
         .from('pacientes')
         .select('id, profiles:user_id(nome)');
-      
+
       const nameMap = {};
       patients?.forEach(p => { nameMap[p.id] = p.profiles?.nome || 'Paciente'; });
 
@@ -49,15 +49,15 @@ export default function FinanceiroPage() {
     }
 
     fetchPayments();
-  }, []);
+  }, [supabase]);
 
   const handleDelete = async (id) => {
     if (!confirm('Tem certeza que deseja excluir esta fatura do paciente?')) return;
-    
+
     try {
       const { error } = await supabase.from('pagamentos').delete().eq('id', id);
       if (error) throw error;
-      
+
       setPayments(prev => prev.filter(p => p.id !== id));
       addToast('Fatura excluída com sucesso!', 'success');
     } catch (error) {
@@ -127,8 +127,8 @@ export default function FinanceiroPage() {
           <div className={styles.filters}>
             <Filter size={14} color="var(--text-muted)" style={{marginRight:'8px'}} />
             {['todos', 'pago', 'pendente', 'cancelado'].map(f => (
-              <button 
-                key={f} 
+              <button
+                key={f}
                 className={`${styles.filterBtn} ${filter === f ? styles.activeFilter : ''}`}
                 onClick={() => setFilter(f)}
               >
@@ -163,7 +163,7 @@ export default function FinanceiroPage() {
                     </span>
                   </td>
                   <td>
-                    <button 
+                    <button
                       onClick={() => handleDelete(p.id)}
                       title="Excluir Fatura"
                       style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}

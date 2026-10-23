@@ -4,21 +4,22 @@ import { getInitials } from '@/utils/helpers';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import styles from './Sidebar.module.css';
-import { 
-  Home, 
-  Users, 
-  Calendar, 
-  Clock, 
-  FileText, 
-  DollarSign, 
-  History, 
-  MessageSquare, 
+import {
+  Home,
+  Users,
+  Calendar,
+  Clock,
+  FileText,
+  DollarSign,
+  History,
+  MessageSquare,
   CreditCard,
   HelpCircle,
   X
 } from 'lucide-react';
 
 const iconMap = {
+  mensagens: <MessageSquare size={18} />,
   '🏠': <Home size={18} />,
   '👥': <Users size={18} />,
   '📅': <Calendar size={18} />,
@@ -40,14 +41,14 @@ export default function Sidebar({ items = [], title = "Painel", subtitle = "Gere
     <>
       {/* Overlay para mobile */}
       <div className={`${styles.overlay} ${isOpen ? styles.overlayVisible : ''}`} onClick={onClose} />
-      
+
       <aside className={`${styles.sidebar} ${isOpen ? styles.mobileOpen : ''}`}>
         <div className={styles.header}>
           <div className={styles.brand}>
             <h2 className={styles.title}>{title}</h2>
             <span className={styles.subtitle}>{subtitle}</span>
           </div>
-          <button className={styles.closeBtn} onClick={onClose}>
+          <button aria-label="Fechar menu" className={styles.closeBtn} onClick={onClose}>
             <X size={24} />
           </button>
         </div>
@@ -56,11 +57,11 @@ export default function Sidebar({ items = [], title = "Painel", subtitle = "Gere
           {items.map((item) => {
             const isActive = pathname === item.href;
             const icon = iconMap[item.icon] || item.icon;
-            
+
             return (
-              <Link 
-                key={item.href} 
-                href={item.href} 
+              <Link
+                key={item.href}
+                href={item.href}
                 className={`${styles.navLink} ${isActive ? styles.active : ''}`}
                 onClick={onClose}
               >

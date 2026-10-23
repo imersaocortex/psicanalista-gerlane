@@ -1,98 +1,35 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { apiError, serviceClient, verifySecret } from '@/lib/server/security';
 import { sendWhatsAppMessage } from '@/utils/whatsapp';
-
 export async function GET(request) {
   try {
-    // 1. Verificação de Segurança (Vercel Cron)
-    const authHeader = request.headers.get('authorization');
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      console.warn('Tentativa de acesso não autorizada ao Cron Job');
-      // Em produção real, você pode descomentar a linha abaixo para bloquear acessos externos:
-      // return new Response('Unauthorized', { status: 401 });
+    verifySecret(request.headers.get('authorization'), process.env.CRON_SECRET ? 'Bearer ' + process.env.CRON_SECRET : undefined);
+    const db = serviceClient();
+    const localDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    const next = new Date(localDate + 'T12:00:00-03:00');
+    next.setUTCDate(next.getUTCDate() + 1);
+    const day = next.toISOString().slice(0, 10);
+    const start = new Date(day + 'T00:00:00-03:00');
+    const end = new Date(start.getTime() + 86400000);
+    const { data: sessions, error } = await db.from('sessoes').select('id, data, pacientes(user_id)').gte('data', start.toISOString()).lt('data', end.toISOString()).eq('status', 'confirmada');
+    if (error) throw error;
+    let sent = 0, failed = 0;
+    for (const session of sessions || []) {
+      if (!session.pacientes?.user_id) continue;
+      const key = 'reminder:' + session.id + ':' + day;
+      // A unique persistent claim prevents concurrent cron requests from sending twice.
+      const { error: claimError } = await db.from('automation_deliveries').insert({ id: key, status: 'processing' });
+      if (claimError?.code === '23505') continue;
+      if (claimError) throw claimError;
+      const time = new Date(session.data).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
+      const text = 'Acolher: seu horário está confirmado para amanhã às ' + time + '. Para reagendar, entre em contato com a clínica.';
+      const result = await sendWhatsAppMessage(session.pacientes.user_id, text, { db });
+      const { error: updateError } = await db.from('automation_deliveries').update({ status: result.success ? 'sent' : 'failed' }).eq('id', key);
+      if (updateError) throw updateError;
+      if (result.success) sent++; else failed++;
+      const { error: notificationError } = await db.from('notificacoes').insert({ user_id: session.pacientes.user_id, titulo: 'Lembrete de consulta', mensagem: text, lida: false, link: '/dashboard/paciente/agenda' });
+      if (notificationError) throw notificationError;
     }
-
-    // Usar a chave de serviço para bypassar RLS e permitir que o robô leia todas as agendas
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
-
-    // 2. Definir o intervalo de "Amanhã" (00:00:00 até 23:59:59)
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    // Configurar para pegar o início e o fim do dia de amanhã
-    const startOfTomorrow = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 0, 0, 0).toISOString();
-    const endOfTomorrow = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 23, 59, 59).toISOString();
-
-    console.log(`[Cron Reminders] Buscando sessões entre ${startOfTomorrow} e ${endOfTomorrow}`);
-
-    // 3. Buscar todas as sessões marcadas para amanhã que não estejam canceladas/concluídas
-    const { data: sessoes, error: sessoesError } = await supabase
-      .from('sessoes')
-      .select(`
-        id,
-        data,
-        status,
-        pacientes (
-          telefone,
-          user_id,
-          profiles (nome)
-        )
-      `)
-      .gte('data', startOfTomorrow)
-      .lte('data', endOfTomorrow)
-      .not('status', 'in', '("cancelada","concluida")');
-
-    if (sessoesError) {
-      throw sessoesError;
-    }
-
-    console.log(`[Cron Reminders] Encontradas ${sessoes?.length || 0} sessões para amanhã.`);
-
-    let notificationsSent = 0;
-
-    // 4. Disparar notificações via WhatsApp
-    for (const sessao of sessoes || []) {
-      const paciente = sessao.pacientes;
-      if (!paciente || !paciente.telefone) continue;
-
-      const pacienteNome = paciente.profiles?.nome?.split(' ')[0] || 'Paciente';
-      const sessionDate = new Date(sessao.data);
-      const timeStr = sessionDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      
-      const message = `Olá ${pacienteNome}! 👋\n\nPassando para lembrar que nossa sessão de terapia está confirmada para amanhã às *${timeStr}*.\n\nSe precisar reagendar, por favor, avise com antecedência pelo Portal ou por aqui. Até amanhã!`;
-
-      try {
-        await sendWhatsAppMessage(paciente.user_id, message, paciente.telefone);
-        notificationsSent++;
-
-        // Também salva a notificação dentro do portal (no sininho)
-        if (paciente.user_id) {
-          await supabase.from('notificacoes').insert({
-            user_id: paciente.user_id,
-            titulo: 'Lembrete de Consulta ⏰',
-            mensagem: `Sua sessão está confirmada para amanhã às ${timeStr}.`,
-            lida: false,
-            link: '/dashboard/paciente/agenda'
-          });
-        }
-      } catch (err) {
-        console.error(`Erro ao enviar lembrete para a sessão ${sessao.id}:`, err);
-      }
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Cron de Lembretes executado com sucesso',
-      sessoesEncontradas: sessoes?.length || 0,
-      notificacoesEnviadas: notificationsSent
-    });
-
-  } catch (error) {
-    console.error('Erro geral no Cron Job:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+    return NextResponse.json({ success: true, sent, failed });
+  } catch (error) { return apiError(error); }
 }

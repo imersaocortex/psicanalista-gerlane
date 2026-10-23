@@ -9,6 +9,7 @@ import styles from './AdminLayout.module.css';
 import { Home, Users, Calendar, Clock, FileText, DollarSign } from 'lucide-react';
 
 const adminMenu = [
+  { icon: 'mensagens', label: 'Mensagens', href: '/dashboard/admin/mensagens' },
   { icon: '🏠', label: 'Início', href: '/dashboard/admin' },
   { icon: '👥', label: 'Pacientes', href: '/dashboard/admin/pacientes' },
   { icon: '📅', label: 'Agenda', href: '/dashboard/admin/agenda' },
@@ -37,7 +38,7 @@ export default function AdminLayout({ children }) {
     if (!loading) {
       if (!isAuthenticated) {
         router.push('/login');
-      } else if (user && user.tipo && user.tipo !== 'admin') {
+      } else if (user?.tipo !== 'admin') {
         router.push('/dashboard/paciente');
       }
     }
@@ -50,7 +51,7 @@ export default function AdminLayout({ children }) {
     </div>
   );
 
-  if (!isAuthenticated) return (
+  if (!isAuthenticated || user?.tipo !== 'admin') return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
       <div className={styles.spinner}></div>
       <p style={{ marginTop: '20px', color: '#666' }}>Iniciando sessão segura...</p>
@@ -59,19 +60,19 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className={styles.layout}>
-      <Sidebar 
-        items={adminMenu} 
-        title="Consultório" 
-        subtitle="Painel Admin" 
+      <Sidebar
+        items={adminMenu}
+        title="Acolher"
+        subtitle="Seu bem-estar em um só lugar"
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
-      
+
       <div className={styles.mainWrapper}>
-        <Header 
+        <Header
           onMenuClick={() => setSidebarOpen(true)}
         />
-        
+
         <main className={styles.content}>
           {children}
         </main>

@@ -9,7 +9,7 @@ export default function ProntuarioPage() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     if (!user) return;
@@ -39,7 +39,7 @@ export default function ProntuarioPage() {
     }
 
     fetchProntuario();
-  }, [user]);
+  }, [supabase, user]);
 
   if (loading) return <div className={styles.loading}>Carregando seu prontuário...</div>;
   if (!data) return <div className={styles.empty}>Nenhum registro clínico encontrado.</div>;

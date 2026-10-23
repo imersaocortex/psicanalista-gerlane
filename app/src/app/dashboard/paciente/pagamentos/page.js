@@ -14,17 +14,17 @@ export default function PagamentosPage() {
   const { addToast } = useToast();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
   const searchParams = useSearchParams();
   const router = useRouter();
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
-      addToast('Pagamento processado! Ele será atualizado em instantes após a confirmação do Asaas.', 'success');
+      addToast('Retorno do checkout. O status será atualizado quando a confirmação do pagamento for recebida.', 'success');
       // Usar o router do Next.js para não quebrar a hidratação e o estado da página
       router.replace('/dashboard/paciente/pagamentos');
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, addToast]);
 
   useEffect(() => {
     if (!user) return;
@@ -49,7 +49,7 @@ export default function PagamentosPage() {
             .select('*')
             .eq('paciente_id', patient.id)
             .order('data', { ascending: false });
-          
+
           setPayments(data || []);
         }
       } catch (error) {
@@ -60,12 +60,12 @@ export default function PagamentosPage() {
     }
 
     fetchPayments();
-  }, [user]);
+  }, [supabase, user]);
 
   const handlePay = async (paymentId) => {
     try {
       addToast('Gerando link de pagamento...', 'info');
-      
+
       const response = await fetch('/api/payments/asaas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -79,9 +79,9 @@ export default function PagamentosPage() {
       }
 
       if (data.invoiceUrl) {
-        window.open(data.invoiceUrl, '_blank');
+        window.location.assign(data.invoiceUrl);
         addToast('Link de pagamento aberto em nova aba!', 'success');
-        
+
         // Atualiza localmente para refletir que está processando
         setPayments(prev => prev.map(p => p.id === paymentId ? { ...p, status: 'processando' } : p));
       } else {

@@ -14,14 +14,14 @@ export default function ProntuarioAdminPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { addToast } = useToast();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     async function fetchPatients() {
       const { data, error } = await supabase
         .from('pacientes')
         .select('id, profiles(nome)');
-      
+
       if (data && data.length > 0) {
         setPatients(data);
         setSelectedPatientId(data[0].id);
@@ -29,7 +29,7 @@ export default function ProntuarioAdminPage() {
       setLoading(false);
     }
     fetchPatients();
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     if (!selectedPatientId) return;
@@ -40,14 +40,14 @@ export default function ProntuarioAdminPage() {
         .select('*, profiles(nome), anamneses(*)')
         .eq('id', selectedPatientId)
         .single();
-      
+
       if (data) {
         setPatientData(data);
         setNotes(data.notas || '');
       }
     }
     fetchPatientDetail();
-  }, [selectedPatientId]);
+  }, [selectedPatientId, supabase]);
 
   const handleSave = async () => {
     if (!selectedPatientId) return;
@@ -109,8 +109,8 @@ export default function ProntuarioAdminPage() {
         <User size={18} color="var(--text-muted)" />
         <label>Selecionar Paciente:</label>
         <div className={styles.selectWrapper}>
-          <select 
-            value={selectedPatientId} 
+          <select
+            value={selectedPatientId}
             onChange={e => setSelectedPatientId(e.target.value)}
             className={styles.select}
           >
@@ -144,7 +144,7 @@ export default function ProntuarioAdminPage() {
             <FileText size={20} className={styles.icon} color="var(--color-green)" />
             <h3>Notas da Sessão e Observações</h3>
           </div>
-          <textarea 
+          <textarea
             className={styles.textarea}
             value={notes}
             onChange={e => setNotes(e.target.value)}

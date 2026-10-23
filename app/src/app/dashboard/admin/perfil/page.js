@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/utils/supabase/client';
@@ -10,33 +11,19 @@ import { User, Mail, Camera, Save, Star, Award, Shield } from 'lucide-react';
 export default function AdminPerfilPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const loading = !user;
   const [saving, setSaving] = useState(false);
   const [photo, setPhoto] = useState(null);
-  const [photoPreview, setPhotoPreview] = useState(null);
+  const [photoOverride, setPhotoPreview] = useState(undefined);
+  const photoPreview = photoOverride ?? user?.foto_url ?? user?.avatar_url;
 
-  const [formData, setFormData] = useState({
-    nome: '',
-    email: '',
-    bio: '',
-    especialidade: ''
-  });
+  const [draft, setDraft] = useState(null);
+  const formData = draft || { nome: user?.nome || '', email: user?.email || '', bio: user?.bio || '', especialidade: user?.especialidade || '' };
+  const setFormData = value => setDraft(typeof value === 'function' ? value(formData) : value);
 
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
-  useEffect(() => {
-    if (!user) return;
-    setFormData({
-      nome: user.nome || '',
-      email: user.email || '',
-      bio: user.bio || '',
-      especialidade: user.especialidade || ''
-    });
-    if (user.foto_url || user.avatar_url) {
-      setPhotoPreview(user.foto_url || user.avatar_url);
-    }
-    setLoading(false);
-  }, [user]);
+
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
@@ -57,12 +44,12 @@ export default function AdminPerfilPage() {
       if (photo) {
         const fileExt = photo.name.split('.').pop();
         const fileName = `admin_${user.id}.${fileExt}`;
-        
+
         // Tentativa de upload com tratamento de erro específico para bucket
         const { error: uploadError } = await supabase.storage
           .from('clinica_media')
           .upload(`avatars/${fileName}`, photo, { upsert: true });
-        
+
         if (uploadError) {
           if (uploadError.message.includes('Bucket not found')) {
             throw new Error('O bucket "clinica_media" não foi encontrado no Supabase. Por favor, crie-o no painel do Supabase Storage como "Public".');
@@ -110,7 +97,7 @@ export default function AdminPerfilPage() {
             <div className={styles.photoSection}>
               <div className={styles.avatarWrapper}>
                 {photoPreview ? (
-                  <img src={photoPreview} alt="Avatar" className={styles.avatarImg} />
+                  <Image width={640} height={640} unoptimized src={photoPreview} alt="Avatar" className={styles.avatarImg} />
                 ) : (
                   <div className={styles.avatarPlaceholder}><User size={48} /></div>
                 )}
@@ -128,35 +115,35 @@ export default function AdminPerfilPage() {
             <div className={styles.inputsGrid}>
               <div className={styles.formGroup}>
                 <label><User size={14} /> Nome Completo</label>
-                <input 
-                  type="text" 
-                  value={formData.nome} 
+                <input
+                  type="text"
+                  value={formData.nome}
                   onChange={e => setFormData({ ...formData, nome: e.target.value })}
                   placeholder="Seu nome"
                 />
               </div>
               <div className={styles.formGroup}>
                 <label><Mail size={14} /> E-mail Profissional</label>
-                <input 
-                  type="email" 
-                  value={formData.email} 
+                <input
+                  type="email"
+                  value={formData.email}
                   disabled
                   style={{ opacity: 0.6 }}
                 />
               </div>
               <div className={styles.formGroupFull}>
                 <label><Award size={14} /> Especialidade / Título</label>
-                <input 
-                  type="text" 
-                  value={formData.especialidade} 
+                <input
+                  type="text"
+                  value={formData.especialidade}
                   onChange={e => setFormData({ ...formData, especialidade: e.target.value })}
                   placeholder="Ex: Psicanalista Clínica, Especialista em TCC"
                 />
               </div>
               <div className={styles.formGroupFull}>
                 <label><Star size={14} /> Biografia Profissional</label>
-                <textarea 
-                  value={formData.bio} 
+                <textarea
+                  value={formData.bio}
                   onChange={e => setFormData({ ...formData, bio: e.target.value })}
                   placeholder="Conte um pouco sobre sua formação e abordagem..."
                   rows={6}

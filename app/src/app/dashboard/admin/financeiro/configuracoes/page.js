@@ -13,7 +13,7 @@ export default function FinanceiroConfigPage() {
   const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   const [config, setConfig] = useState({
     pix_key: '',
@@ -30,10 +30,10 @@ export default function FinanceiroConfigPage() {
         .from('configuracoes_sistema')
         .select('*')
         .eq('admin_id', user.id);
-      
+
       const mapped = {};
       data?.forEach(item => {
-        mapped[item.chave] = item.valor;
+        try { mapped[item.chave] = typeof item.valor === 'string' ? JSON.parse(item.valor) : item.valor; } catch { mapped[item.chave] = item.valor; }
       });
 
       if (Object.keys(mapped).length > 0) {
@@ -45,7 +45,7 @@ export default function FinanceiroConfigPage() {
       setLoading(false);
     }
     fetchConfig();
-  }, [user]);
+  }, [supabase, user]);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -61,7 +61,7 @@ export default function FinanceiroConfigPage() {
             valor: JSON.stringify(valor),
             updated_at: new Date().toISOString()
           }, { onConflict: 'chave' });
-        
+
         if (error) throw error;
       }
       addToast('Configurações salvas com sucesso! 💰', 'success');
@@ -99,8 +99,8 @@ export default function FinanceiroConfigPage() {
             </div>
             <div className={styles.formGroup}>
               <label>Valor da Sessão Individual (R$)</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 value={config.session_value}
                 onChange={e => setConfig({...config, session_value: e.target.value})}
                 placeholder="Ex: 150.00"
@@ -116,8 +116,8 @@ export default function FinanceiroConfigPage() {
             </div>
             <div className={styles.formGroup}>
               <label>Chave Pix para Recebimento</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={config.pix_key}
                 onChange={e => setConfig({...config, pix_key: e.target.value})}
                 placeholder="CPF, E-mail, Celular ou Chave Aleatória"
@@ -135,12 +135,12 @@ export default function FinanceiroConfigPage() {
           <p className={styles.sectionDesc}>
             Configure o Asaas para automação de Pix, Boletos e Cartão de Crédito.
           </p>
-          
+
           <div className={styles.grid}>
             <div className={styles.formGroup}>
               <label>Asaas API Key</label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 value={config.asaas_api_key}
                 onChange={e => setConfig({...config, asaas_api_key: e.target.value})}
                 placeholder="$a.abc..."
@@ -148,7 +148,7 @@ export default function FinanceiroConfigPage() {
             </div>
             <div className={styles.formGroup}>
               <label>Ambiente</label>
-              <select 
+              <select
                 value={config.asaas_environment}
                 onChange={e => setConfig({...config, asaas_environment: e.target.value})}
                 className={styles.select}

@@ -12,7 +12,7 @@ export default function ConfiguracoesAdminPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { addToast } = useToast();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   const [configs, setConfigs] = useState({
     evolution_api_url: '',
@@ -29,7 +29,7 @@ export default function ConfiguracoesAdminPage() {
         .from('configuracoes_sistema')
         .select('*')
         .eq('admin_id', user.id);
-      
+
       if (data) {
         const configMap = {};
         data.forEach(item => {
@@ -45,7 +45,7 @@ export default function ConfiguracoesAdminPage() {
       setLoading(false);
     }
     fetchConfigs();
-  }, [user]);
+  }, [supabase, user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,7 +58,7 @@ export default function ConfiguracoesAdminPage() {
     setSaving(true);
     try {
       const entries = Object.entries(configs);
-      
+
       for (const [chave, valor] of entries) {
         // Garantir serialização em JSON válida para colunas JSON/JSONB do Supabase
         const { error } = await supabase
@@ -102,33 +102,33 @@ export default function ConfiguracoesAdminPage() {
             <h3>Integração WhatsApp (Evolution API)</h3>
           </div>
           <p className={styles.sectionDesc}>Configure sua instância da Evolution API para envio automático de mensagens e notificações.</p>
-          
+
           <div className={styles.grid}>
             <div className={styles.formGroup}>
               <label>URL Base da API (ex: https://evo.seusite.com)</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="evolution_api_url"
-                value={configs.evolution_api_url} 
+                value={configs.evolution_api_url}
                 onChange={handleChange}
                 placeholder="https://"
               />
             </div>
             <div className={styles.formGroup}>
               <label>Nome da Instância (ex: ClinicaBot)</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="evolution_api_instance"
-                value={configs.evolution_api_instance} 
+                value={configs.evolution_api_instance}
                 onChange={handleChange}
               />
             </div>
             <div className={styles.formGroup}>
               <label>Global API Key (Global API Key da Evolution)</label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 name="evolution_api_apikey"
-                value={configs.evolution_api_apikey} 
+                value={configs.evolution_api_apikey}
                 onChange={handleChange}
               />
             </div>
@@ -142,14 +142,14 @@ export default function ConfiguracoesAdminPage() {
             <h3>Integração Financeira (Asaas)</h3>
           </div>
           <p className={styles.sectionDesc}>Configure suas credenciais para emissão de cobranças automáticas.</p>
-          
+
           <div className={styles.grid}>
             <div className={styles.formGroup}>
               <label>Asaas API Key (Access Token)</label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 name="asaas_api_key"
-                value={configs.asaas_api_key} 
+                value={configs.asaas_api_key}
                 onChange={handleChange}
                 placeholder="$aact_..."
               />

@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -54,7 +55,7 @@ export default function PacienteChatPage() {
         .select('id, nome, avatar_url, bio')
         .eq('tipo', 'admin')
         .maybeSingle();
-      
+
       if (mounted) {
         setAdmin(data);
         setLoading(false);
@@ -75,7 +76,7 @@ export default function PacienteChatPage() {
         .select('*')
         .or(`and(remetente_id.eq.${user.id},destinatario_id.eq.${admin.id}),and(remetente_id.eq.${admin.id},destinatario_id.eq.${user.id})`)
         .order('data', { ascending: true });
-      
+
       if (mounted) {
         setMessages(data || []);
         setTimeout(() => scrollToBottom('auto'), 50);
@@ -100,16 +101,16 @@ export default function PacienteChatPage() {
     const channelId = `chat_room_${[user.id, admin.id].sort().join('_')}`;
     const channel = supabase
       .channel(channelId)
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
         table: 'mensagens'
       }, (payload) => {
         const msg = payload.new;
-        const isRelated = 
+        const isRelated =
           (msg.remetente_id === admin.id && msg.destinatario_id === user.id) ||
           (msg.remetente_id === user.id && msg.destinatario_id === admin.id);
-        
+
         if (mounted && isRelated) {
           if (msg.remetente_id !== user.id) playNotificationSound();
           setMessages(prev => {
@@ -124,7 +125,7 @@ export default function PacienteChatPage() {
       mounted = false;
       supabase.removeChannel(channel);
     };
-  }, [admin?.id, user?.id, supabase, scrollToBottom]);
+  }, [supabase, scrollToBottom, admin, user]);
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -171,7 +172,7 @@ export default function PacienteChatPage() {
         <header className={styles.chatHeader}>
           <div className={styles.headerInfo}>
             <div className={styles.headerAvatar}>
-              {admin?.avatar_url ? <img src={admin.avatar_url} alt="Dra" /> : <User size={20} />}
+              {admin?.avatar_url ? <Image width={640} height={640} unoptimized src={admin.avatar_url} alt="Dra" /> : <User size={20} />}
             </div>
             <div>
               <h4>{admin?.nome || 'Dra. Gerlane'}</h4>
@@ -186,10 +187,10 @@ export default function PacienteChatPage() {
             <p>Este é o seu canal direto e seguro com a sua terapeuta. Suas mensagens são protegidas por sigilo profissional.</p>
           </div>
           {messages.map((m) => (
-            <MessageItem 
-              key={m.id} 
-              m={m} 
-              isOwn={m.remetente_id === user.id} 
+            <MessageItem
+              key={m.id}
+              m={m}
+              isOwn={m.remetente_id === user.id}
             />
           ))}
           <div ref={messagesEndRef} />
@@ -197,9 +198,9 @@ export default function PacienteChatPage() {
 
         <form className={styles.inputArea} onSubmit={sendMessage}>
           <button type="button" className={styles.attachBtn}><Paperclip size={20} /></button>
-          <input 
-            type="text" 
-            placeholder="Escreva para a Dra. Gerlane..." 
+          <input
+            type="text"
+            placeholder="Escreva para a Dra. Gerlane..."
             value={newMessage}
             onChange={e => setNewMessage(e.target.value)}
             autoComplete="off"

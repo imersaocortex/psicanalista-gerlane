@@ -18,7 +18,7 @@ export default function AnamnesePacientePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(false);
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   const [formData, setFormData] = useState({
     queixa_principal: '',
@@ -53,7 +53,7 @@ export default function AnamnesePacientePage() {
           .select('*')
           .eq('paciente_id', patient.id)
           .limit(1);
-        
+
         if (data?.length > 0) {
           setAlreadyDone(true);
           setFormData({
@@ -66,7 +66,7 @@ export default function AnamnesePacientePage() {
       setLoading(false);
     }
     checkExisting();
-  }, [user]);
+  }, [supabase, user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -78,7 +78,7 @@ export default function AnamnesePacientePage() {
     setSaving(true);
     try {
       console.log('Iniciando envio de anamnese...');
-      
+
       const { data: patient, error: pError } = await supabase
         .from('pacientes')
         .select('id')

@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './Navbar.module.css';
@@ -11,7 +12,7 @@ export default function Navbar() {
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
-    
+
     // Prevent scroll when menu is open
     if (menuOpen) {
       document.body.style.overflow = 'hidden';
@@ -35,14 +36,14 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className={`${styles.navbar} ${scrolled ? styles.scrolled : ''}`} suppressHydrationWarning>
-        <div className={styles.container} suppressHydrationWarning>
+      <nav className={`${styles.navbar} ${scrolled ? styles.scrolled : ''}`}>
+        <div className={styles.container}>
           <Link href="/" className={styles.logo}>
-            <img src="/images/logo.png" alt="Logo Dra. Gerlane" className={styles.logoImg} />
+            <Image width={640} height={640} unoptimized src="/images/logo.png" alt="Logo Dra. Gerlane" className={styles.logoImg} />
           </Link>
 
           {/* Desktop Links */}
-          <div className={styles.desktopLinks} suppressHydrationWarning>
+          <div className={styles.desktopLinks}>
             {navLinks.map(link => (
               <a key={link.href} href={link.href} className={styles.navLink}>
                 {link.label}
@@ -54,9 +55,9 @@ export default function Navbar() {
           </div>
 
           {/* Hamburger Toggle */}
-          <button 
-            className={styles.hamburger} 
-            onClick={() => setMenuOpen(true)} 
+          <button
+            className={styles.hamburger}
+            onClick={() => setMenuOpen(true)}
             aria-label="Abrir Menu"
           >
             <Menu size={28} />
@@ -65,28 +66,28 @@ export default function Navbar() {
       </nav>
 
       {/* Mobile Sidebar Drawer */}
-      <div className={`${styles.sidebarOverlay} ${menuOpen ? styles.overlayVisible : ''}`} onClick={() => setMenuOpen(false)} suppressHydrationWarning />
-      
-      <div className={`${styles.mobileSidebar} ${menuOpen ? styles.sidebarOpen : ''}`} suppressHydrationWarning>
-        <div className={styles.sidebarHeader} suppressHydrationWarning>
-          <img src="/images/logo.png" alt="Logo" className={styles.sidebarLogo} />
-          <button className={styles.closeBtn} onClick={() => setMenuOpen(false)}>
+      <div className={`${styles.sidebarOverlay} ${menuOpen ? styles.overlayVisible : ''}`} onClick={() => setMenuOpen(false)} />
+
+      <div className={`${styles.mobileSidebar} ${menuOpen ? styles.sidebarOpen : ''}`}>
+        <div className={styles.sidebarHeader}>
+          <Image width={640} height={640} unoptimized src="/images/logo.png" alt="Logo" className={styles.sidebarLogo} />
+          <button aria-label="Fechar menu" className={styles.closeBtn} onClick={() => setMenuOpen(false)}>
             <X size={28} />
           </button>
         </div>
 
-        <div className={styles.sidebarNav} suppressHydrationWarning>
+        <div className={styles.sidebarNav}>
           {navLinks.map(link => (
-            <a 
-              key={link.href} 
-              href={link.href} 
-              className={styles.sidebarNavLink} 
+            <a
+              key={link.href}
+              href={link.href}
+              className={styles.sidebarNavLink}
               onClick={() => setMenuOpen(false)}
             >
               {link.label}
             </a>
           ))}
-          <div className={styles.sidebarFooter} suppressHydrationWarning>
+          <div className={styles.sidebarFooter}>
             <Link href="/login" className={styles.sidebarLoginBtn} onClick={() => setMenuOpen(false)}>
               <Lock size={16} /> Área do Paciente
             </Link>

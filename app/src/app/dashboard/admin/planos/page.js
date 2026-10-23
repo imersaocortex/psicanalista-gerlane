@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useToast } from '@/context/ToastContext';
 import styles from './planos.module.css';
@@ -11,7 +11,7 @@ export default function PlanosAdminPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { addToast } = useToast();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   const [formData, setFormData] = useState({
     id: null,
@@ -23,16 +23,17 @@ export default function PlanosAdminPage() {
     asaas_id: ''
   });
 
-  useEffect(() => {
-    fetchPlans();
-  }, []);
 
-  async function fetchPlans() {
-    setLoading(true);
+  const fetchPlans = useCallback(async () => {
     const { data } = await supabase.from('planos').select('*').order('created_at', { ascending: false });
     setPlans(data || []);
     setLoading(false);
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    supabase.from('planos').select('*').order('created_at', { ascending: false }).then(({ data }) => { setPlans(data || []); setLoading(false); });
+  }, [supabase]);
+
 
   const openNewPlanModal = () => {
     setFormData({ id: null, nome: '', descricao: '', preco: '', periodicidade: 'mensal', limite_sessoes: 4, asaas_id: '' });
@@ -54,7 +55,7 @@ export default function PlanosAdminPage() {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Tem certeza que deseja excluir este plano? Esta ação só funcionará se nenhum paciente estiver usando este plano.')) return;
-    
+
     try {
       const { error } = await supabase.from('planos').delete().eq('id', id);
       if (error) {
@@ -102,7 +103,7 @@ export default function PlanosAdminPage() {
       .from('planos')
       .update({ ativo: !currentStatus })
       .eq('id', id);
-    
+
     if (!error) fetchPlans();
   };
 
@@ -129,12 +130,12 @@ export default function PlanosAdminPage() {
               <span className={styles.price}>{plan.preco}</span>
               <span className={styles.period}>/{plan.periodicidade === 'avulso' ? 'sessão' : 'mês'}</span>
             </div>
-            
+
             <div className={styles.asaasInfo}>
               <Hash size={14} />
               <span>Limite: {plan.limite_sessoes || 'Ilimitado'} sessões</span>
             </div>
-            
+
             <div className={styles.asaasInfo} style={{marginTop: '4px'}}>
               <CreditCard size={14} />
               <span>Asaas ID: {plan.asaas_id || 'Não vinculado'}</span>
@@ -142,7 +143,7 @@ export default function PlanosAdminPage() {
 
             <div className={styles.planActions}>
               <button className={styles.editBtn} onClick={() => handleEdit(plan)} title="Editar"><Edit2 size={16} /></button>
-              <button 
+              <button
                 className={plan.ativo ? styles.deactivateBtn : styles.activateBtn}
                 onClick={() => toggleStatus(plan.id, plan.ativo)}
                 title={plan.ativo ? "Inativar" : "Ativar"}
@@ -168,18 +169,18 @@ export default function PlanosAdminPage() {
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.formGroup}>
                 <label>Nome do Plano</label>
-                <input 
-                  type="text" 
-                  value={formData.nome} 
+                <input
+                  type="text"
+                  value={formData.nome}
                   onChange={e => setFormData({...formData, nome: e.target.value})}
-                  required 
+                  required
                   placeholder="Ex: Plano Individual Mensal"
                 />
               </div>
               <div className={styles.formGroup}>
                 <label>Descrição</label>
-                <textarea 
-                  value={formData.descricao} 
+                <textarea
+                  value={formData.descricao}
                   onChange={e => setFormData({...formData, descricao: e.target.value})}
                   placeholder="O que este plano inclui?"
                 />
@@ -187,18 +188,18 @@ export default function PlanosAdminPage() {
               <div className={styles.row}>
                 <div className={styles.formGroup}>
                   <label>Preço (R$)</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     step="0.01"
-                    value={formData.preco} 
+                    value={formData.preco}
                     onChange={e => setFormData({...formData, preco: e.target.value})}
-                    required 
+                    required
                   />
                 </div>
                 <div className={styles.formGroup}>
                   <label>Periodicidade</label>
-                  <select 
-                    value={formData.periodicidade} 
+                  <select
+                    value={formData.periodicidade}
                     onChange={e => setFormData({...formData, periodicidade: e.target.value})}
                   >
                     <option value="mensal">Mensal</option>
@@ -212,20 +213,20 @@ export default function PlanosAdminPage() {
               <div className={styles.row}>
                 <div className={styles.formGroup}>
                   <label>Limite de Sessões (por ciclo)</label>
-                  <input 
-                    type="number" 
-                    value={formData.limite_sessoes} 
+                  <input
+                    type="number"
+                    value={formData.limite_sessoes}
                     onChange={e => setFormData({...formData, limite_sessoes: e.target.value})}
-                    required 
+                    required
                     min="1"
                     placeholder="Ex: 4"
                   />
                 </div>
                 <div className={styles.formGroup}>
                   <label>Asaas ID (Opcional)</label>
-                  <input 
-                    type="text" 
-                    value={formData.asaas_id} 
+                  <input
+                    type="text"
+                    value={formData.asaas_id}
                     onChange={e => setFormData({...formData, asaas_id: e.target.value})}
                     placeholder="prod_..."
                   />

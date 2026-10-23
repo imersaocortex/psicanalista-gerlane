@@ -18,7 +18,7 @@ export default function PacienteHome() {
     sessionLimit: 4
   });
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     if (!user) return;
@@ -84,7 +84,7 @@ export default function PacienteHome() {
     }
 
     fetchPatientDashboard();
-  }, [user]);
+  }, [supabase, user]);
 
   if (loading) return (
     <div className={styles.loadingContainer}>
@@ -212,12 +212,12 @@ export default function PacienteHome() {
               <>
                 <p className={styles.mainInfo}>{data.currentPlan.nome}</p>
                 <p className={styles.subInfo} style={{marginBottom: 0}}>R$ {data.currentPlan.preco}/{data.currentPlan.periodicidade}</p>
-                
+
                 <div className={styles.progressTrack}>
-                  <div 
-                    className={styles.progressFill} 
+                  <div
+                    className={styles.progressFill}
                     style={{
-                      width: `${Math.min((data.usedSessions / data.sessionLimit) * 100, 100)}%`, 
+                      width: `${Math.min((data.usedSessions / data.sessionLimit) * 100, 100)}%`,
                       backgroundColor: data.usedSessions >= data.sessionLimit ? 'var(--color-error)' : 'var(--color-green)'
                     }}
                   ></div>
@@ -266,7 +266,7 @@ export default function PacienteHome() {
       <div className={styles.quoteSection}>
         <Quote size={40} className={styles.quoteIcon} />
         <div className={styles.quoteCard}>
-          <p className={styles.quoteText}>"Sua visão se tornará clara somente quando você puder olhar para o seu próprio coração. Quem olha para fora, sonha; quem olha para dentro, desperta."</p>
+          <p className={styles.quoteText}>&quot;Sua visão se tornará clara somente quando você puder olhar para o seu próprio coração. Quem olha para fora, sonha; quem olha para dentro, desperta.&quot;</p>
           <span className={styles.author}>— Carl Jung</span>
         </div>
       </div>

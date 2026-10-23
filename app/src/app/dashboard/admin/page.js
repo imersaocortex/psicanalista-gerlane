@@ -4,13 +4,13 @@ import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import { formatCurrency, formatDate } from '@/utils/helpers';
 import styles from './admin.module.css';
-import { 
-  Users, 
-  Calendar, 
-  DollarSign, 
-  TrendingUp, 
-  Clock, 
-  ArrowUpRight, 
+import {
+  Users,
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  Clock,
+  ArrowUpRight,
   ChevronRight,
   AlertCircle,
   Check,
@@ -27,7 +27,7 @@ export default function AdminDashboard() {
   const [pendingPayments, setPendingPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
         const totalRevenue = (allPayments.data || [])
           .filter(p => p.status === 'pago')
           .reduce((acc, curr) => acc + (curr.valor || 0), 0);
-        
+
         const pendingCount = (allPayments.data || [])
           .filter(p => p.status === 'pendente').length;
 
@@ -79,7 +79,7 @@ export default function AdminDashboard() {
     return () => {
       supabase.removeChannel(sessionsChannel);
     };
-  }, []);
+  }, [supabase]);
 
   const handleUpdateStatus = async (sessionId, newStatus) => {
     try {
@@ -195,7 +195,7 @@ export default function AdminDashboard() {
             </div>
             <Link href="/dashboard/admin/agenda" className={styles.viewAll}>Ver agenda completa</Link>
           </div>
-          
+
           <div className={styles.sessionsList}>
             {recentSessions.length > 0 ? recentSessions.map(session => (
               <div key={session.id} className={styles.sessionItem}>

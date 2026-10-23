@@ -30,7 +30,7 @@ export default function PacienteDetalhesPage() {
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [creatingInvoice, setCreatingInvoice] = useState(false);
 
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     async function fetchPatient() {
@@ -69,7 +69,7 @@ export default function PacienteDetalhesPage() {
           .order('data', { ascending: false })
           .limit(1)
           .maybeSingle();
-        
+
         if (payData) {
           setLastPayment(payData);
           setPaymentStatus(payData.status);
@@ -83,9 +83,9 @@ export default function PacienteDetalhesPage() {
       setPlans(plansData || []);
       await fetchPatient();
     }
-    
+
     fetchData();
-  }, [id]);
+  }, [addToast, id, router, supabase]);
 
   const handleCreateInvoice = async () => {
     if (!selectedPlanId) {
@@ -96,7 +96,7 @@ export default function PacienteDetalhesPage() {
     setCreatingInvoice(true);
     // Use loose equality to handle string/number type mismatch from select element
     const plan = plans.find(p => String(p.id) === String(selectedPlanId));
-    
+
     if (!plan) {
       addToast('Plano selecionado não encontrado.', 'error');
       setCreatingInvoice(false);
@@ -182,7 +182,7 @@ export default function PacienteDetalhesPage() {
           .from('pacientes')
           .update({ status: 'arquivado' })
           .eq('id', id);
-        
+
         if (error) throw error;
         addToast('Paciente arquivado com sucesso.', 'success');
         router.push('/dashboard/admin/pacientes');
@@ -283,7 +283,7 @@ export default function PacienteDetalhesPage() {
           <form onSubmit={handleSave} className={styles.form}>
             <div className={styles.formGroup}>
               <label>Nome Completo</label>
-              <input 
+              <input
                 type="text"
                 value={formData.nome}
                 onChange={e => setFormData({ ...formData, nome: e.target.value })}
@@ -293,7 +293,7 @@ export default function PacienteDetalhesPage() {
 
             <div className={styles.formGroup}>
               <label>E-mail (Apenas Visualização)</label>
-              <input 
+              <input
                 type="email"
                 value={formData.email}
                 disabled
@@ -305,7 +305,7 @@ export default function PacienteDetalhesPage() {
             <div className={styles.row}>
               <div className={styles.formGroup}>
                 <label><Phone size={14} /> Telefone</label>
-                <input 
+                <input
                   type="text"
                   value={formData.telefone}
                   onChange={e => setFormData({ ...formData, telefone: e.target.value })}
@@ -315,7 +315,7 @@ export default function PacienteDetalhesPage() {
               </div>
               <div className={styles.formGroup}>
                 <label><Calendar size={14} /> Data de Nascimento</label>
-                <input 
+                <input
                   type="date"
                   value={formData.data_nascimento}
                   onChange={e => setFormData({ ...formData, data_nascimento: e.target.value })}
@@ -327,7 +327,7 @@ export default function PacienteDetalhesPage() {
             <div className={styles.row}>
               <div className={styles.formGroup}>
                 <label><Briefcase size={14} /> Profissão</label>
-                <input 
+                <input
                   type="text"
                   value={formData.profissao}
                   onChange={e => setFormData({ ...formData, profissao: e.target.value })}
@@ -336,7 +336,7 @@ export default function PacienteDetalhesPage() {
               </div>
               <div className={styles.formGroup}>
                 <label>Status Clínico</label>
-                <select 
+                <select
                   value={formData.status}
                   onChange={e => setFormData({ ...formData, status: e.target.value })}
                   className={styles.select}
@@ -361,7 +361,7 @@ export default function PacienteDetalhesPage() {
             <h3>Resumo de Sessões</h3>
             <p className={styles.emptyMsg}>Histórico detalhado em breve.</p>
           </div>
-          
+
           <div className={styles.card} style={{ borderTop: '4px solid var(--color-warning)' }}>
             <div className={styles.cardHeader}>
               <CreditCard size={18} color="var(--color-warning)" />
@@ -374,8 +374,8 @@ export default function PacienteDetalhesPage() {
                 <p><strong>Data:</strong> {formatDate(lastPayment.data)}</p>
                 <div className={styles.statusSelectGroup}>
                   <label>Alterar Status:</label>
-                  <select 
-                    value={paymentStatus} 
+                  <select
+                    value={paymentStatus}
                     onChange={e => setPaymentStatus(e.target.value)}
                     className={styles.statusSelect}
                   >
@@ -390,7 +390,7 @@ export default function PacienteDetalhesPage() {
                 <p className={styles.emptyMsg}>Este paciente não possui histórico financeiro.</p>
                 <div className={styles.formGroup} style={{marginTop: '1rem'}}>
                   <label>Gerar cobrança do plano:</label>
-                  <select 
+                  <select
                     className={styles.select}
                     value={selectedPlanId}
                     onChange={e => setSelectedPlanId(e.target.value)}
@@ -401,8 +401,8 @@ export default function PacienteDetalhesPage() {
                     ))}
                   </select>
                 </div>
-                <Button 
-                  style={{width: '100%', marginTop: '1rem'}} 
+                <Button
+                  style={{width: '100%', marginTop: '1rem'}}
                   onClick={handleCreateInvoice}
                   disabled={creatingInvoice}
                 >

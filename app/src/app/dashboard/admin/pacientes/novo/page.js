@@ -1,12 +1,13 @@
 'use client';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useToast } from '@/context/ToastContext';
 import styles from './novo.module.css';
 import Button from '@/components/ui/Button';
-import { 
-  User, Phone, Calendar, Mail, MapPin, Save, ArrowLeft, 
+import {
+  User, Phone, Calendar, Mail, MapPin, Save, ArrowLeft,
   Camera, ShieldCheck, CreditCard, ChevronRight, ChevronLeft,
   CheckCircle2, Plus
 } from 'lucide-react';
@@ -15,7 +16,7 @@ import Link from 'next/link';
 export default function NovoPacientePage() {
   const router = useRouter();
   const { addToast } = useToast();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [plans, setPlans] = useState([]);
@@ -46,7 +47,7 @@ export default function NovoPacientePage() {
       if (data?.length > 0) setFormData(prev => ({ ...prev, plano_id: data[0].id }));
     }
     fetchPlans();
-  }, []);
+  }, [supabase]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -78,7 +79,7 @@ export default function NovoPacientePage() {
         const { error: uploadError, data: uploadData } = await supabase.storage
           .from('clinica_media')
           .upload(`avatars/${fileName}`, photo);
-        
+
         if (uploadError) {
           if (uploadError.message.includes('Bucket not found')) {
             throw new Error('O bucket "clinica_media" não foi encontrado. Por favor, crie-o no painel do Supabase Storage como "Public".');
@@ -96,14 +97,15 @@ export default function NovoPacientePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: formData.email,
-          password: formData.senha || 'paciente123',
+          password: formData.senha,
+          adminCreated: true,
           nome: formData.nome
         })
       });
 
       setDebugStatus('Processando resposta da API...');
       const authDataResponse = await res.json();
-      
+
       if (!res.ok) {
         throw new Error(authDataResponse.error || 'Erro ao criar o login do paciente');
       }
@@ -132,7 +134,7 @@ export default function NovoPacientePage() {
         console.error("Patient Update Error:", patientError);
         throw new Error("Erro ao atualizar os dados adicionais do paciente: " + patientError.message);
       }
-      
+
       setDebugStatus('Verificando plano e pagamentos...');
       // 4. Create initial payment/invoice
       if (formData.plano_id) {
@@ -154,11 +156,12 @@ export default function NovoPacientePage() {
               .insert({
                 paciente_id: newPatient.id,
                 valor: selectedPlan.preco,
+                plano_id: selectedPlan.id,
                 tipo_plano: selectedPlan.periodicidade || 'avulso',
                 status: formData.status_pagamento,
                 data: new Date().toISOString()
               });
-              
+
             if (paymentError) {
               console.error("Payment Insert Error:", paymentError);
               // Not throwing here to avoid rolling back the user creation, just log it.
@@ -188,12 +191,12 @@ export default function NovoPacientePage() {
       }
 
       addToast('Paciente e acesso criados com sucesso! 🚀', 'success');
-      
+
       // Delay navigation slightly so the user can see the success message
       setTimeout(() => {
         router.push('/dashboard/admin/pacientes');
       }, 1500);
-      
+
     } catch (error) {
       console.error('Registration Error:', error);
       setDebugStatus(`Erro capturado: ${error.message}`);
@@ -231,7 +234,7 @@ export default function NovoPacientePage() {
               <div className={styles.photoUpload}>
                 <div className={styles.previewContainer}>
                   {photoPreview ? (
-                    <img src={photoPreview} alt="Preview" className={styles.previewImg} />
+                    <Image width={640} height={640} unoptimized src={photoPreview} alt="Preview" className={styles.previewImg} />
                   ) : (
                     <div className={styles.photoPlaceholder}>
                       <Camera size={32} />
@@ -340,13 +343,16 @@ export default function NovoPacientePage() {
                   <p>Defina a senha que o paciente usará para acessar o portal.</p>
                 </div>
                 <div className={styles.formGroup} style={{width: '100%', marginTop: '1rem'}}>
-                  <input 
-                    type="password" 
-                    name="senha" 
-                    value={formData.senha} 
-                    onChange={handleChange} 
-                    required 
-                    placeholder="Defina uma senha segura" 
+                  <input
+                    type="password"
+                    name="senha"
+                    minLength={8}
+                    maxLength={128}
+                    autoComplete="new-password"
+                    value={formData.senha}
+                    onChange={handleChange}
+                    required
+                    placeholder="Defina uma senha segura"
                     style={{ background: 'white' }}
                   />
                 </div>
@@ -356,8 +362,8 @@ export default function NovoPacientePage() {
                 <h3><CreditCard size={20} /> Vincular Plano</h3>
                 <div className={styles.plansGrid}>
                   {plans.map(plan => (
-                    <div 
-                      key={plan.id} 
+                    <div
+                      key={plan.id}
                       className={`${styles.planCard} ${formData.plano_id === plan.id ? styles.selected : ''}`}
                       onClick={() => setFormData({ ...formData, plano_id: plan.id })}
                     >
@@ -376,15 +382,15 @@ export default function NovoPacientePage() {
                 <h3><CheckCircle2 size={20} /> Status do Primeiro Pagamento</h3>
                 <p className={styles.sectionDesc}>Informe se o paciente já realizou o pagamento inicial ou se deve ser cobrado.</p>
                 <div className={styles.statusToggle}>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className={`${styles.statusBtn} ${formData.status_pagamento === 'pago' ? styles.statusActive : ''}`}
                     onClick={() => setFormData({ ...formData, status_pagamento: 'pago' })}
                   >
                     Já Pago
                   </button>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className={`${styles.statusBtn} ${formData.status_pagamento === 'pendente' ? styles.statusActive : ''}`}
                     onClick={() => setFormData({ ...formData, status_pagamento: 'pendente' })}
                   >

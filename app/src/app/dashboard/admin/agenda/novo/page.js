@@ -8,11 +8,13 @@ import Button from '@/components/ui/Button';
 import { Calendar, Clock, User, ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
 
+const daysMapping = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
 export default function NovoAgendamentoPage() {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     paciente_id: '',
     data: '',
@@ -23,9 +25,9 @@ export default function NovoAgendamentoPage() {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [bookedSlots, setBookedSlots] = useState([]);
 
-  const daysMapping = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
-  const supabase = createClient();
+
+  const [supabase] = useState(() => createClient());
   const { addToast } = useToast();
   const router = useRouter();
 
@@ -36,7 +38,7 @@ export default function NovoAgendamentoPage() {
         .from('pacientes')
         .select('id, user_id, profiles(nome)')
         .eq('status', 'ativo');
-      
+
       setPatients(pData || []);
       if (pData?.length > 0) {
         setFormData(prev => ({ ...prev, paciente_id: pData[0].id }));
@@ -46,7 +48,7 @@ export default function NovoAgendamentoPage() {
       const { data: aData } = await supabase
         .from('disponibilidade')
         .select('dia_semana, horarios');
-      
+
       const mapped = {};
       aData?.forEach(item => {
         mapped[item.dia_semana] = item.horarios;
@@ -56,7 +58,7 @@ export default function NovoAgendamentoPage() {
       setLoading(false);
     }
     fetchData();
-  }, []);
+  }, [supabase]);
 
   // Update available slots and fetch booked sessions when date changes
   useEffect(() => {
@@ -84,21 +86,17 @@ export default function NovoAgendamentoPage() {
       }) || [];
 
       setBookedSlots(bookedTimes);
-      
+
       // Filter baseSlots to exclude bookedTimes
       const filtered = baseSlots.filter(slot => !bookedTimes.includes(slot));
       setAvailableSlots(filtered);
-      
+
       // Reset selected hour if it's not in the new slots
-      if (filtered.length > 0 && !filtered.includes(formData.hora)) {
-        setFormData(prev => ({ ...prev, hora: filtered[0] }));
-      } else if (filtered.length === 0) {
-        setFormData(prev => ({ ...prev, hora: '' }));
-      }
+      setFormData(prev => ({ ...prev, hora: filtered.includes(prev.hora) ? prev.hora : filtered[0] || '' }));
     }
 
     fetchBookedAndFilter();
-  }, [formData.data, availability]);
+  }, [formData.data, availability, supabase]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -110,7 +108,7 @@ export default function NovoAgendamentoPage() {
     setSaving(true);
     try {
       const sessionDate = new Date(`${formData.data}T${formData.hora}:00`);
-      
+
       const { error } = await supabase
         .from('sessoes')
         .insert({
@@ -162,7 +160,7 @@ export default function NovoAgendamentoPage() {
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
             <label><User size={16} /> Paciente</label>
-            <select 
+            <select
               value={formData.paciente_id}
               onChange={e => setFormData({ ...formData, paciente_id: e.target.value })}
               className={styles.select}
@@ -177,7 +175,7 @@ export default function NovoAgendamentoPage() {
           <div className={styles.grid}>
             <div className={styles.formGroup}>
               <label><Calendar size={16} /> Data</label>
-              <input 
+              <input
                 type="date"
                 value={formData.data}
                 onChange={e => setFormData({ ...formData, data: e.target.value })}
@@ -187,7 +185,7 @@ export default function NovoAgendamentoPage() {
             </div>
             <div className={styles.formGroup}>
               <label><Clock size={16} /> Horário</label>
-              <select 
+              <select
                 value={formData.hora}
                 onChange={e => setFormData({ ...formData, hora: e.target.value })}
                 className={styles.select}
@@ -210,7 +208,7 @@ export default function NovoAgendamentoPage() {
 
           <div className={styles.formGroup}>
             <label>Observações / Notas</label>
-            <textarea 
+            <textarea
               value={formData.observacoes}
               onChange={e => setFormData({ ...formData, observacoes: e.target.value })}
               placeholder="Ex: Primeira sessão, foco em ansiedade..."

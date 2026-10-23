@@ -1,21 +1,26 @@
 {
-  "name": "Portal Dra. Gerlane",
-  "short_name": "Terapia",
-  "description": "Portal da Clínica Psicanalítica Dra. Gerlane",
+  "id": "/login",
+  "name": "Acolher",
+  "short_name": "Acolher",
+  "description": "Seu bem-estar em um só lugar",
+  "lang": "pt-BR",
   "start_url": "/login",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#1a1b26",
-  "theme_color": "#1a1b26",
+  "background_color": "#FFFCF7",
+  "theme_color": "#1B4332",
   "icons": [
     {
-      "src": "/images/favicon.png",
+      "src": "/images/acolher-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/images/favicon.png",
+      "src": "/images/acolher-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

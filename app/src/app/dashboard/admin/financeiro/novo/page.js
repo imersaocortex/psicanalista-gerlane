@@ -12,7 +12,7 @@ export default function NovoPagamentoPage() {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     paciente_id: '',
     tipo_plano: 'avulso',
@@ -21,7 +21,7 @@ export default function NovoPagamentoPage() {
     data: new Date().toISOString().split('T')[0]
   });
 
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
   const { addToast } = useToast();
   const router = useRouter();
 
@@ -31,7 +31,7 @@ export default function NovoPagamentoPage() {
         .from('pacientes')
         .select('id, profiles(nome)')
         .eq('status', 'ativo');
-      
+
       setPatients(data || []);
       if (data?.length > 0) {
         setFormData(prev => ({ ...prev, paciente_id: data[0].id }));
@@ -39,7 +39,7 @@ export default function NovoPagamentoPage() {
       setLoading(false);
     }
     fetchPatients();
-  }, []);
+  }, [supabase]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,7 +88,7 @@ export default function NovoPagamentoPage() {
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
             <label><User size={16} /> Selecionar Paciente</label>
-            <select 
+            <select
               value={formData.paciente_id}
               onChange={e => setFormData({ ...formData, paciente_id: e.target.value })}
               className={styles.select}
@@ -103,7 +103,7 @@ export default function NovoPagamentoPage() {
           <div className={styles.grid}>
             <div className={styles.formGroup}>
               <label><CreditCard size={16} /> Tipo de Plano</label>
-              <select 
+              <select
                 value={formData.tipo_plano}
                 onChange={e => setFormData({ ...formData, tipo_plano: e.target.value })}
                 className={styles.select}
@@ -117,7 +117,7 @@ export default function NovoPagamentoPage() {
             </div>
             <div className={styles.formGroup}>
               <label><DollarSign size={16} /> Valor (R$)</label>
-              <input 
+              <input
                 type="number"
                 step="0.01"
                 placeholder="0,00"
@@ -132,7 +132,7 @@ export default function NovoPagamentoPage() {
           <div className={styles.grid}>
             <div className={styles.formGroup}>
               <label><Calendar size={16} /> Data de Lançamento / Vencimento</label>
-              <input 
+              <input
                 type="date"
                 value={formData.data}
                 onChange={e => setFormData({ ...formData, data: e.target.value })}
@@ -142,7 +142,7 @@ export default function NovoPagamentoPage() {
             </div>
             <div className={styles.formGroup}>
               <label>Status Inicial</label>
-              <select 
+              <select
                 value={formData.status}
                 onChange={e => setFormData({ ...formData, status: e.target.value })}
                 className={styles.select}

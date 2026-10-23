@@ -16,7 +16,7 @@ export default function PacientePlanos() {
   const [plans, setPlans] = useState([]);
   const [currentPlanId, setCurrentPlanId] = useState(null);
   const [patientId, setPatientId] = useState(null);
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     if (!user) return;
@@ -37,12 +37,12 @@ export default function PacientePlanos() {
         if (patient) {
           setPatientId(patient.id);
           setCurrentPlanId(patient.plano_id);
-          
+
           const { data: allPlans } = await supabase
             .from('planos')
             .select('*')
             .eq('ativo', true);
-          
+
           setPlans(allPlans || []);
         }
       } catch (error) {
@@ -53,56 +53,22 @@ export default function PacientePlanos() {
     }
 
     fetchPlans();
-  }, [user]);
+  }, [supabase, user]);
 
   const handlePlanChange = async (plan) => {
-    if (plan.id === currentPlanId) return;
-    
+    if (plan.id === currentPlanId || changing) return;
+
     setChanging(plan.id);
     try {
-      // 1. Criar um registro de pagamento para o novo plano
-      const { data: payment, error: payError } = await supabase
-        .from('pagamentos')
-        .insert({
-          paciente_id: patientId,
-          valor: plan.preco,
-          tipo_plano: plan.periodicidade, // Envia a periodicidade (ex: 'mensal') para respeitar a constraint
-          status: 'pendente',
-          data: new Date().toISOString()
-        })
-        .select()
-        .maybeSingle();
-
-      if (payError) throw payError;
-
-      // 2. Chamar a API do Asaas para gerar o link
-      const response = await fetch('/api/payments/asaas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentId: payment.id })
-      });
-
-      // 3. Disparar notificação (que aciona WhatsApp) informando a geração da fatura
-      try {
-        await fetch('/api/notifications', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.id,
-            title: 'Fatura de Plano Gerada',
-            message: `A fatura para a ativação do seu plano ${plan.nome} foi gerada. Conclua o pagamento para habilitar seus benefícios!`,
-            link: '/dashboard/paciente/pagamentos'
-          })
-        });
-      } catch (err) {
-        console.error('Erro ao disparar notificação de troca de plano:', err);
-      }
-
+      const planResponse = await fetch('/api/payments/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId: plan.id }) });
+      const planResult = await planResponse.json();
+      if (!planResponse.ok) throw new Error(planResult.error || 'Não foi possível preparar o plano.');
+      const response = await fetch('/api/payments/asaas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentId: planResult.paymentId }) });
       const result = await response.json();
 
       if (result.invoiceUrl) {
         addToast('Redirecionando para o pagamento do novo plano...', 'success');
-        window.open(result.invoiceUrl, '_blank');
+        window.location.assign(result.invoiceUrl);
       } else {
         throw new Error(result.error || 'Erro ao gerar pagamento');
       }
@@ -129,8 +95,8 @@ export default function PacientePlanos() {
 
       <div className={styles.plansGrid}>
         {plans.map((plan) => (
-          <div 
-            key={plan.id} 
+          <div
+            key={plan.id}
             className={`${styles.planCard} ${plan.id === currentPlanId ? styles.current : ''}`}
           >
             {plan.id === currentPlanId && (
@@ -144,7 +110,7 @@ export default function PacientePlanos() {
                 R$ {plan.preco}<span>/{plan.periodicidade}</span>
               </p>
             </div>
-            
+
             <div className={styles.features}>
               <div className={styles.feature}>
                 <CheckCircle2 size={16} color="var(--color-green)" />
@@ -166,8 +132,8 @@ export default function PacientePlanos() {
                   Plano Ativo
                 </Button>
               ) : (
-                <Button 
-                  onClick={() => handlePlanChange(plan)} 
+                <Button
+                  onClick={() => handlePlanChange(plan)}
                   disabled={changing === plan.id}
                   style={{ width: '100%' }}
                 >

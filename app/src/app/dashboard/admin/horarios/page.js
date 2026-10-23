@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -18,13 +18,11 @@ export default function HorariosPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { addToast } = useToast();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     if (!user) return;
-    fetchAvailability();
-  }, [user]);
-  async function fetchAvailability() {
+    async function loadAvailability() {
     try {
       const { data: configData } = await supabase
         .from('configuracoes_sistema')
@@ -34,16 +32,18 @@ export default function HorariosPage() {
         .maybeSingle();
 
       if (configData?.valor) {
-        setTimeSlots(configData.valor);
+        let slots = configData.valor;
+        try { if (typeof slots === 'string') slots = JSON.parse(slots); } catch { slots = []; }
+        if (Array.isArray(slots)) setTimeSlots(slots);
       }
 
       const { data, error } = await supabase
         .from('disponibilidade')
         .select('*')
         .eq('admin_id', user.id);
-      
+
       if (error) throw error;
-      
+
       const mapped = {};
       data?.forEach(item => {
         mapped[item.dia_semana] = item.horarios;
@@ -54,7 +54,10 @@ export default function HorariosPage() {
     } finally {
       setLoading(false);
     }
-  }
+    }
+
+    loadAvailability();
+  }, [supabase, user]);
 
   const addTimeSlot = () => {
     if (!newSlot) return;
@@ -85,7 +88,7 @@ export default function HorariosPage() {
     setSaving(true);
     try {
       console.log('Iniciando salvamento de horários...', { userId: user.id });
-      
+
       // Passo 1: Salvar a grade de horários (a lista de 08:00, 09:00...)
       const { error: configError } = await supabase
         .from('configuracoes_sistema')
@@ -94,7 +97,7 @@ export default function HorariosPage() {
           chave: 'horarios_disponiveis',
           valor: timeSlots,
           updated_at: new Date().toISOString()
-        }, { onConflict: 'admin_id, chave' });
+        }, { onConflict: 'chave' });
 
       if (configError) {
         console.error('Erro no Passo 1 (configuracoes_sistema):', configError);
@@ -103,7 +106,7 @@ export default function HorariosPage() {
 
       // Passo 2: Salvar a disponibilidade para cada dia
       console.log('Passo 1 concluído. Iniciando Passo 2 (disponibilidade)...');
-      
+
       for (const day of daysOfWeek) {
         const slots = schedule[day] || [];
         const { error: dispError } = await supabase
@@ -114,7 +117,7 @@ export default function HorariosPage() {
             horarios: slots,
             updated_at: new Date().toISOString()
           }, { onConflict: 'admin_id, dia_semana' });
-        
+
         if (dispError) {
           console.error(`Erro no Passo 2 - Dia ${day}:`, dispError);
           throw new Error(`Erro ao salvar dia ${day}: ${dispError.message}`);
@@ -152,9 +155,9 @@ export default function HorariosPage() {
         <h3>Gerenciar Grade de Horários</h3>
         <p>Adicione ou remova os horários que você atende (ex: 08:30, 14:15).</p>
         <div className={styles.addSlotArea}>
-          <input 
-            type="time" 
-            value={newSlot} 
+          <input
+            type="time"
+            value={newSlot}
             onChange={e => setNewSlot(e.target.value)}
             className={styles.timeInput}
           />
@@ -187,7 +190,7 @@ export default function HorariosPage() {
                     const isActive = (schedule[day] || []).includes(time);
                     return (
                       <td key={day} className={styles.slotCell}>
-                        <button 
+                        <button
                           className={`${styles.slotBtn} ${isActive ? styles.active : ''}`}
                           onClick={() => toggleSlot(day, time)}
                         >

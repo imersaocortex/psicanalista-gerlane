@@ -10,7 +10,7 @@ export default function HistoricoPage() {
   const { user } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     if (!user) return;
@@ -34,7 +34,7 @@ export default function HistoricoPage() {
             .select('*')
             .eq('paciente_id', patient.id)
             .order('data', { ascending: false });
-          
+
           setSessions(data || []);
         }
       } catch (error) {
@@ -45,7 +45,7 @@ export default function HistoricoPage() {
     }
 
     fetchHistory();
-  }, [user]);
+  }, [supabase, user]);
 
   if (loading) return <div className={styles.loading}>Carregando histórico...</div>;
 
@@ -66,7 +66,7 @@ export default function HistoricoPage() {
               <span className={styles.day}>{new Date(s.data).getDate()}</span>
               <span className={styles.month}>{new Date(s.data).toLocaleDateString('pt-BR', { month: 'short' })}</span>
             </div>
-            
+
             <div className={styles.content}>
               <div className={styles.cardHeader}>
                 <h4>Sessão às {new Date(s.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</h4>

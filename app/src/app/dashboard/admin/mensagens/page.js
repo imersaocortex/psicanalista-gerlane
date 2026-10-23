@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -58,7 +59,7 @@ export default function AdminChatPage() {
         .from('pacientes')
         .select('id, user_id, foto_url, profiles:user_id (nome, email)')
         .eq('status', 'ativo');
-      
+
       if (mounted) {
         setPatients(data || []);
         setLoading(false);
@@ -80,13 +81,13 @@ export default function AdminChatPage() {
         .select('*')
         .or(`and(remetente_id.eq.${user.id},destinatario_id.eq.${selectedPatient.user_id}),and(remetente_id.eq.${selectedPatient.user_id},destinatario_id.eq.${user.id})`)
         .order('data', { ascending: true });
-      
+
       if (mounted) {
         setMessages(data || []);
         // Delayed scroll to ensure DOM is ready
         setTimeout(() => scrollToBottom('auto'), 50);
       }
-      
+
       await supabase
         .from('mensagens')
         .update({ lida: true })
@@ -106,16 +107,16 @@ export default function AdminChatPage() {
     const channelId = `chat_room_${[user.id, selectedPatient.user_id].sort().join('_')}`;
     const channel = supabase
       .channel(channelId)
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
         table: 'mensagens'
       }, (payload) => {
         const msg = payload.new;
-        const isRelated = 
+        const isRelated =
           (msg.remetente_id === selectedPatient.user_id && msg.destinatario_id === user.id) ||
           (msg.remetente_id === user.id && msg.destinatario_id === selectedPatient.user_id);
-        
+
         if (mounted && isRelated) {
           if (msg.remetente_id !== user.id) playNotificationSound();
           setMessages(prev => {
@@ -130,7 +131,7 @@ export default function AdminChatPage() {
       mounted = false;
       supabase.removeChannel(channel);
     };
-  }, [selectedPatient?.user_id, user?.id, supabase, scrollToBottom]);
+  }, [supabase, scrollToBottom, selectedPatient, user]);
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -170,7 +171,7 @@ export default function AdminChatPage() {
     }
   };
 
-  const filteredPatients = patients.filter(p => 
+  const filteredPatients = patients.filter(p =>
     p.profiles?.nome.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -182,9 +183,9 @@ export default function AdminChatPage() {
             <h3>Mensagens</h3>
             <div className={styles.searchBar}>
               <Search size={16} />
-              <input 
-                type="text" 
-                placeholder="Buscar paciente..." 
+              <input
+                type="text"
+                placeholder="Buscar paciente..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
@@ -192,13 +193,13 @@ export default function AdminChatPage() {
           </div>
           <div className={styles.patientList}>
             {filteredPatients.map(p => (
-              <div 
-                key={p.id} 
+              <div
+                key={p.id}
                 className={`${styles.patientItem} ${selectedPatient?.id === p.id ? styles.active : ''}`}
                 onClick={() => setSelectedPatient(p)}
               >
                 <div className={styles.avatar}>
-                  {p.foto_url ? <img src={p.foto_url} alt="P" /> : <User size={20} />}
+                  {p.foto_url ? <Image width={640} height={640} unoptimized src={p.foto_url} alt="P" /> : <User size={20} />}
                 </div>
                 <div className={styles.patientInfo}>
                   <p className={styles.patientName}>{p.profiles?.nome}</p>
@@ -215,7 +216,7 @@ export default function AdminChatPage() {
               <header className={styles.chatHeader}>
                 <div className={styles.headerInfo}>
                   <div className={styles.headerAvatar}>
-                    {selectedPatient.foto_url ? <img src={selectedPatient.foto_url} alt="P" /> : <User size={20} />}
+                    {selectedPatient.foto_url ? <Image width={640} height={640} unoptimized src={selectedPatient.foto_url} alt="P" /> : <User size={20} />}
                   </div>
                   <div>
                     <h4>{selectedPatient.profiles?.nome}</h4>
@@ -227,10 +228,10 @@ export default function AdminChatPage() {
 
               <div className={styles.messagesList} ref={listRef}>
                 {messages.map((m) => (
-                  <MessageItem 
-                    key={m.id} 
-                    m={m} 
-                    isOwn={m.remetente_id === user.id} 
+                  <MessageItem
+                    key={m.id}
+                    m={m}
+                    isOwn={m.remetente_id === user.id}
                   />
                 ))}
                 <div ref={messagesEndRef} />
@@ -238,9 +239,9 @@ export default function AdminChatPage() {
 
               <form className={styles.inputArea} onSubmit={sendMessage}>
                 <button type="button" className={styles.attachBtn}><Paperclip size={20} /></button>
-                <input 
-                  type="text" 
-                  placeholder="Escreva sua mensagem..." 
+                <input
+                  type="text"
+                  placeholder="Escreva sua mensagem..."
                   value={newMessage}
                   onChange={e => setNewMessage(e.target.value)}
                   autoComplete="off"

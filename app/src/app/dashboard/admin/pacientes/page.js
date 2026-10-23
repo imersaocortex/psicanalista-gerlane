@@ -14,12 +14,13 @@ import { useToast } from '@/context/ToastContext';
 export default function PacientesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [search, setSearch] = useState(searchParams.get('q') || '');
+  const [searchOverride, setSearch] = useState(null);
+  const search = searchOverride ?? searchParams.get('q') ?? '';
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeMenu, setActiveMenu] = useState(null);
   const { addToast } = useToast();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     async function fetchPatients() {
@@ -64,22 +65,16 @@ export default function PacientesPage() {
     }
 
     fetchPatients();
-  }, []);
+  }, [supabase]);
 
-  // Update search state if URL changes
-  useEffect(() => {
-    const q = searchParams.get('q');
-    if (q !== null) {
-      setSearch(q);
-    }
-  }, [searchParams]);
 
-  const filtered = patients.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) || 
+
+  const filtered = patients.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.email.toLowerCase().includes(search.toLowerCase()) ||
     p.mainComplaint.toLowerCase().includes(search.toLowerCase())
   );
-  
+
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = () => setActiveMenu(null);
@@ -105,7 +100,7 @@ export default function PacientesPage() {
       .from('pacientes')
       .update({ status: newStatus })
       .eq('id', id);
-    
+
     if (!error) {
       setPatients(prev => prev.map(p => p.id === id ? { ...p, status: newStatus } : p));
       addToast(newStatus === 'ativo' ? 'Paciente reativado com sucesso!' : 'Paciente inativado com sucesso!', 'success');
@@ -118,7 +113,7 @@ export default function PacientesPage() {
   const handleDelete = async (e, id, userId) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (confirm('Tem certeza que deseja excluir permanentemente este paciente e todos os seus dados (sessões, pagamentos, anamnese)? Esta ação não pode ser desfeita.')) {
       setLoading(true);
       try {
@@ -218,12 +213,12 @@ export default function PacientesPage() {
       <div className={styles.actionsBar}>
         <div className={styles.searchWrapper}>
           <SearchIcon size={18} className={styles.searchIcon} />
-          <input 
-            type="text" 
-            placeholder="Buscar por nome, e-mail ou queixa..." 
-            value={search} 
-            onChange={e => setSearch(e.target.value)} 
-            className={styles.searchInput} 
+          <input
+            type="text"
+            placeholder="Buscar por nome, e-mail ou queixa..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className={styles.searchInput}
           />
         </div>
         <button className={styles.filterBtn}>
@@ -233,19 +228,19 @@ export default function PacientesPage() {
 
       <div className={styles.grid}>
         {filtered.map((p, index) => (
-          <div 
-            key={p.id} 
-            className={styles.patientCard} 
+          <div
+            key={p.id}
+            className={styles.patientCard}
             style={{ animationDelay: `${index * 0.05}s` }}
           >
             <div className={styles.menuContainer} onClick={(e) => e.stopPropagation()}>
-              <button 
-                className={styles.moreBtn} 
+              <button
+                className={styles.moreBtn}
                 onClick={(e) => handleToggleMenu(e, p.id)}
               >
                 <MoreHorizontal size={18} />
               </button>
-              
+
               {activeMenu === p.id && (
                 <div className={styles.dropdown} onClick={(e) => e.stopPropagation()}>
                   <Link href={`/dashboard/admin/pacientes/${p.id}`} className={styles.dropdownItem}>
@@ -254,24 +249,24 @@ export default function PacientesPage() {
                   <Link href={`/dashboard/admin/pacientes/${p.id}/editar`} className={styles.dropdownItem}>
                     <Plus size={16} style={{transform: 'rotate(45deg)'}} /> EDITAR CADASTRO
                   </Link>
-                  <Link 
-                      href={`/dashboard/admin/pacientes/${p.id}/imprimir`} 
-                      target="_blank" 
+                  <Link
+                      href={`/dashboard/admin/pacientes/${p.id}/imprimir`}
+                      target="_blank"
                       className={styles.dropdownItem}
                       onClick={() => setActiveMenu(null)}
                     >
                       <Plus size={16} /> IMPRIMIR FICHA
                     </Link>
                   <div className={styles.divider} />
-                  <button 
-                    onClick={(e) => handleInativar(e, p.id, p.status)} 
+                  <button
+                    onClick={(e) => handleInativar(e, p.id, p.status)}
                     className={`${styles.dropdownItem} ${p.status === 'ativo' ? styles.danger : styles.success}`}
                   >
                     <MoreHorizontal size={16} /> {p.status === 'ativo' ? 'INATIVAR PACIENTE' : 'REATIVAR PACIENTE'}
                   </button>
                   <div className={styles.divider} />
-                  <button 
-                    onClick={(e) => handleDelete(e, p.id, p.userId)} 
+                  <button
+                    onClick={(e) => handleDelete(e, p.id, p.userId)}
                     className={`${styles.dropdownItem} ${styles.danger}`}
                   >
                     <Trash2 size={16} /> EXCLUIR PACIENTE
@@ -280,7 +275,7 @@ export default function PacientesPage() {
               )}
             </div>
 
-            <div 
+            <div
               className={styles.cardClickableArea}
               onClick={() => router.push(`/dashboard/admin/pacientes/${p.id}`)}
             >
@@ -294,7 +289,7 @@ export default function PacientesPage() {
                   <span className={styles.email}>{p.email}</span>
                 </div>
               </div>
-              
+
               <div className={styles.cardDetails}>
                 <div className={styles.detail}>
                   <span className={styles.label}>Profissão</span>

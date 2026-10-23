@@ -29,7 +29,7 @@ export default function AnamneseAdminPage() {
   const [arquivos, setArquivos] = useState([]);
   const [uploading, setUploading] = useState(false);
 
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     async function fetchData() {
@@ -39,7 +39,7 @@ export default function AnamneseAdminPage() {
         .select('id, user_id, telefone, profiles:user_id(nome)')
         .eq('id', id)
         .single();
-      
+
       setPatient(p);
 
       // Fetch existing anamnesis
@@ -48,7 +48,7 @@ export default function AnamneseAdminPage() {
         .select('*')
         .eq('paciente_id', id)
         .maybeSingle();
-      
+
       if (a) {
         setFormData({
           queixa_principal: a.queixa_principal || '',
@@ -59,32 +59,32 @@ export default function AnamneseAdminPage() {
       setLoading(false);
     }
     fetchData();
-  }, [id]);
+  }, [id, supabase]);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024 || !['application/pdf', 'image/jpeg', 'image/png'].includes(file.type)) { addToast('Envie um PDF, JPG ou PNG de até 10 MB.', 'warning'); return; }
 
     setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-      const filePath = `anamneses/${id}/${fileName}`;
+      const filePath = `${id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('clinica_media')
+        .from('clinica_documentos')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('clinica_media')
-        .getPublicUrl(filePath);
+
 
       const newFile = {
-        id: Math.random().toString(36).substring(2, 9),
+        id: crypto.randomUUID(),
         name: file.name,
-        url: publicUrl,
+        bucket: 'clinica_documentos',
+        path: filePath,
         size: file.size,
         type: file.type,
         createdAt: new Date().toISOString()
@@ -111,7 +111,7 @@ export default function AnamneseAdminPage() {
     setSaving(true);
     try {
       const { queixa_principal, ...respostas } = formData;
-      
+
       // Upsert anamnesis
       const { data: existing } = await supabase
         .from('anamneses')
@@ -220,7 +220,7 @@ export default function AnamneseAdminPage() {
           </div>
           <div className={styles.formGroup}>
             <label>Queixa Principal</label>
-            <textarea 
+            <textarea
               value={formData.queixa_principal}
               onChange={e => setFormData({...formData, queixa_principal: e.target.value})}
               placeholder="Descreva a queixa trazida pelo paciente..."
@@ -238,7 +238,7 @@ export default function AnamneseAdminPage() {
             </div>
             <div className={styles.formGroup}>
               <label>Histórico Familiar</label>
-              <textarea 
+              <textarea
                 value={formData.historico_familiar}
                 onChange={e => setFormData({...formData, historico_familiar: e.target.value})}
                 placeholder="Doenças mentais na família, relacionamentos..."
@@ -246,7 +246,7 @@ export default function AnamneseAdminPage() {
             </div>
             <div className={styles.formGroup}>
               <label>Saúde Física</label>
-              <textarea 
+              <textarea
                 value={formData.saude_fisica}
                 onChange={e => setFormData({...formData, saude_fisica: e.target.value})}
                 placeholder="Condições físicas, dores, patologias..."
@@ -254,7 +254,7 @@ export default function AnamneseAdminPage() {
             </div>
             <div className={styles.formGroup}>
               <label>Medicamentos</label>
-              <input 
+              <input
                 type="text"
                 value={formData.uso_medicamentos}
                 onChange={e => setFormData({...formData, uso_medicamentos: e.target.value})}
@@ -286,7 +286,7 @@ export default function AnamneseAdminPage() {
             </div>
             <div className={styles.formGroup}>
               <label>Objetivos Terapêuticos</label>
-              <textarea 
+              <textarea
                 value={formData.objetivos}
                 onChange={e => setFormData({...formData, objetivos: e.target.value})}
                 placeholder="O que se pretende alcançar com este paciente?"
@@ -301,7 +301,7 @@ export default function AnamneseAdminPage() {
             <Paperclip size={20} />
             <h3>4. Documentos e Anexos</h3>
           </div>
-          
+
           <div className={styles.uploadArea}>
             <label className={styles.uploadLabel}>
               {uploading ? (
@@ -309,11 +309,11 @@ export default function AnamneseAdminPage() {
               ) : (
                 <><FileUp size={24} /> Clique para anexar documentos (PDF, Exames, etc.)</>
               )}
-              <input 
-                type="file" 
-                onChange={handleFileUpload} 
-                disabled={uploading} 
-                hidden 
+              <input
+                type="file"
+                onChange={handleFileUpload}
+                disabled={uploading}
+                hidden
               />
             </label>
           </div>
@@ -331,11 +331,11 @@ export default function AnamneseAdminPage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  {file.url && (
-                    <a 
-                      href={file.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                  {file.id && (
+                    <a
+                      href={'/api/documents?file=' + encodeURIComponent(file.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className={styles.downloadBtn}
                       title="Baixar anexo"
                       style={{ color: 'var(--color-green)', display: 'flex' }}
@@ -343,8 +343,8 @@ export default function AnamneseAdminPage() {
                       <Download size={16} />
                     </a>
                   )}
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => handleRemoveFile(file.id)}
                     className={styles.removeBtn}
                     title="Remover anexo"
@@ -369,10 +369,10 @@ export default function AnamneseAdminPage() {
 
       {/* Container invisível apenas para geração do PDF */}
       <div style={{ position: 'absolute', left: '-9999px', top: '0', width: '800px' }}>
-        <AnamneseReport 
-          formData={formData} 
-          arquivos={arquivos} 
-          id="anamnese-report-admin" 
+        <AnamneseReport
+          formData={formData}
+          arquivos={arquivos}
+          id="anamnese-report-admin"
         />
       </div>
     </div>

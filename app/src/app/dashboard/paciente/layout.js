@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import styles from './PacienteLayout.module.css';
 
 const patientMenu = [
+  { icon: 'mensagens', label: 'Mensagens', href: '/dashboard/paciente/mensagens' },
   { icon: '🏠', label: 'Início', href: '/dashboard/paciente' },
   { icon: '📅', label: 'Agenda', href: '/dashboard/paciente/agenda' },
   { icon: '📝', label: 'Minha Anamnese', href: '/dashboard/paciente/anamnese' },
@@ -26,7 +27,7 @@ export default function PacienteLayout({ children }) {
     if (!loading) {
       if (!isAuthenticated) {
         router.push('/login');
-      } else if (user && user.tipo && user.tipo !== 'paciente') {
+      } else if (user?.tipo !== 'paciente') {
         router.push('/dashboard/admin');
       }
     }
@@ -39,7 +40,7 @@ export default function PacienteLayout({ children }) {
     </div>
   );
 
-  if (!isAuthenticated) return (
+  if (!isAuthenticated || user?.tipo !== 'paciente') return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
       <div className={styles.spinner}></div>
       <p style={{ marginTop: '20px', color: '#666' }}>Iniciando sessão segura...</p>
@@ -48,16 +49,16 @@ export default function PacienteLayout({ children }) {
 
   return (
     <div className={styles.layout}>
-      <Sidebar 
-        items={patientMenu} 
-        title="Minha Terapia" 
-        subtitle="Área do Paciente" 
+      <Sidebar
+        items={patientMenu}
+        title="Acolher"
+        subtitle="Seu bem-estar em um só lugar"
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
-      
+
       <div className={styles.mainWrapper}>
-        <Header 
+        <Header
           onMenuClick={() => setSidebarOpen(true)}
         />
         <main className={styles.content}>{children}</main>

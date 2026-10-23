@@ -1,12 +1,13 @@
 'use client';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useToast } from '@/context/ToastContext';
 import styles from '../../novo/novo.module.css';
 import Button from '@/components/ui/Button';
-import { 
-  User, Phone, Calendar, Mail, MapPin, Save, ArrowLeft, 
+import {
+  User, Phone, Calendar, Mail, MapPin, Save, ArrowLeft,
   Camera, ShieldCheck, CreditCard, Plus, CheckCircle2,
   Trash2
 } from 'lucide-react';
@@ -16,7 +17,7 @@ export default function EditarPacientePage() {
   const { id } = useParams();
   const router = useRouter();
   const { addToast } = useToast();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [plans, setPlans] = useState([]);
@@ -94,7 +95,7 @@ export default function EditarPacientePage() {
           .order('data', { ascending: false })
           .limit(1)
           .maybeSingle();
-        
+
         if (payData) {
           setLastPayment(payData);
           setPaymentStatus(payData.status);
@@ -110,7 +111,7 @@ export default function EditarPacientePage() {
       }
     }
     fetchData();
-  }, [id]);
+  }, [addToast, id, supabase]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -160,7 +161,7 @@ export default function EditarPacientePage() {
         const { error: uploadError } = await supabase.storage
           .from('clinica_media')
           .upload(`avatars/${fileName}`, photo, { upsert: true });
-        
+
         if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage.from('clinica_media').getPublicUrl(`avatars/${fileName}`);
@@ -176,7 +177,7 @@ export default function EditarPacientePage() {
             avatar_url: avatarUrl
           })
           .eq('id', userId);
-        
+
         if (profileError) throw profileError;
       }
 
@@ -185,14 +186,14 @@ export default function EditarPacientePage() {
         .from('pacientes')
         .update({
           telefone: formData.telefone,
-          data_nascimento: formData.data_nascimento,
+          data_nascimento: formData.data_nascimento || null,
           genero: formData.genero,
           profissao: formData.profissao,
           endereco: formData.endereco,
           contato_emergencia: formData.contato_emergencia,
           notas: formData.notas,
           foto_url: avatarUrl,
-          plano_id: formData.plano_id,
+          plano_id: formData.plano_id || null,
           status: formData.status,
           cpf: formData.cpf
         })
@@ -211,11 +212,12 @@ export default function EditarPacientePage() {
           const { error: invoiceError } = await supabase.from('pagamentos').insert({
             paciente_id: id,
             valor: selectedPlan.preco,
+                plano_id: selectedPlan.id,
             tipo_plano: selectedPlan.periodicidade || 'avulso',
-            status: paymentStatus === 'pago' ? 'pago' : 'pendente', 
+            status: paymentStatus === 'pago' ? 'pago' : 'pendente',
             data: new Date().toISOString()
           });
-          
+
           if (invoiceError) {
              console.error("Erro na Fatura:", invoiceError);
              addToast(`Erro ao criar fatura: ${invoiceError.message}`, 'error');
@@ -247,7 +249,7 @@ export default function EditarPacientePage() {
           .from('pagamentos')
           .update({ status: paymentStatus })
           .eq('id', lastPayment.id);
-          
+
         if (paymentStatus === 'pago') {
           await notifyPatient(
             'Pagamento Confirmado! 🎉',
@@ -303,7 +305,7 @@ export default function EditarPacientePage() {
             <div className={styles.photoUpload}>
               <div className={styles.previewContainer}>
                 {photoPreview ? (
-                  <img src={photoPreview} alt="Preview" className={styles.previewImg} />
+                  <Image width={640} height={640} unoptimized src={photoPreview} alt="Preview" className={styles.previewImg} />
                 ) : (
                   <div className={styles.photoPlaceholder}>
                     <Camera size={32} />
@@ -316,7 +318,7 @@ export default function EditarPacientePage() {
               <input type="file" id="photo" hidden accept="image/*" onChange={handlePhotoChange} />
               <div className={styles.photoInfo}>
                 <h4>Foto de Perfil</h4>
-                <p>Clique no "+" para alterar a imagem</p>
+                <p>Clique no &quot;+&quot; para alterar a imagem</p>
               </div>
             </div>
 
@@ -400,8 +402,8 @@ export default function EditarPacientePage() {
               <h3><CreditCard size={20} /> Plano Vinculado</h3>
               <div className={styles.plansGrid}>
                 {plans.map(plan => (
-                  <div 
-                    key={plan.id} 
+                  <div
+                    key={plan.id}
                     className={`${styles.planCard} ${formData.plano_id === plan.id ? styles.selected : ''}`}
                     onClick={() => setFormData({ ...formData, plano_id: plan.id })}
                   >
@@ -413,7 +415,7 @@ export default function EditarPacientePage() {
                   </div>
                 ))}
               </div>
-              
+
               <div className={styles.paymentStatusSection} style={{marginTop: '2rem'}}>
                 <div className={styles.sectionHeader}>
                   <CreditCard size={20} />
@@ -421,14 +423,14 @@ export default function EditarPacientePage() {
                 </div>
                 <p className={styles.sectionDesc}>Defina se o pagamento deste período já foi realizado.</p>
                 <div className={styles.statusToggle}>
-                  <button 
+                  <button
                     type="button"
                     className={`${styles.statusBtn} ${paymentStatus === 'pago' ? styles.statusActive : ''}`}
                     onClick={() => setPaymentStatus('pago')}
                   >
                     Pago
                   </button>
-                  <button 
+                  <button
                     type="button"
                     className={`${styles.statusBtn} ${paymentStatus === 'pendente' ? styles.statusActive : ''}`}
                     onClick={() => setPaymentStatus('pendente')}

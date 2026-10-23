@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
@@ -7,7 +8,7 @@ import { User, Phone, Mail, Calendar, MapPin, ClipboardList } from 'lucide-react
 
 export default function ImprimirPacientePage() {
   const { id } = useParams();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -28,7 +29,7 @@ export default function ImprimirPacientePage() {
       setLoading(false);
     }
     fetchPatient();
-  }, [id]);
+  }, [id, supabase]);
 
   useEffect(() => {
     if (!loading && patient) {
@@ -61,7 +62,7 @@ export default function ImprimirPacientePage() {
       <div className={styles.profileSection}>
         <div className={styles.photoContainer}>
           {patient.profiles?.avatar_url || patient.foto_url ? (
-            <img src={patient.profiles?.avatar_url || patient.foto_url} alt="Foto do Paciente" />
+            <Image width={640} height={640} unoptimized src={patient.profiles?.avatar_url || patient.foto_url} alt="Foto do Paciente" />
           ) : (
             <div className={styles.noPhoto}>SEM FOTO</div>
           )}
