@@ -1,5 +1,7 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
+import { clinicDate, clinicSlot } from '@/lib/billing.mjs';
 import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -21,7 +23,8 @@ export default function AgendaPage() {
   const [selectedModality, setSelectedModality] = useState(null);
   const [requesting, setRequesting] = useState(false);
   const [bookedSlots, setBookedSlots] = useState([]);
-  const [hasPendingPayment, setHasPendingPayment] = useState(false);
+  const [balance, setBalance] = useState(null);
+  const slotsRequest = useRef(0);
   const [viewingDetails, setViewingDetails] = useState(null); // Data selecionada para ver detalhes
   const [supabase] = useState(() => createClient());
 
@@ -42,26 +45,22 @@ export default function AgendaPage() {
         .maybeSingle();
 
       if (patient) {
-        const startOfMonth = new Date(year, month, 1).toISOString();
-        const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
+        const startOfMonth = clinicSlot(`${year}-${String(month + 1).padStart(2, '0')}-01`, '00:00');
+        const nextMonth = new Date(Date.UTC(year, month + 1, 1));
+        const endOfMonth = clinicSlot(nextMonth.toISOString().slice(0,10), '00:00');
 
         const { data } = await supabase
           .from('sessoes')
           .select('*')
           .eq('paciente_id', patient.id)
           .gte('data', startOfMonth)
-          .lte('data', endOfMonth);
+          .lt('data', endOfMonth);
 
         setSessions(data || []);
 
         // Verificação de pagamentos pendentes
-        const { data: payments } = await supabase
-          .from('pagamentos')
-          .select('id')
-          .eq('paciente_id', patient.id)
-          .in('status', ['pendente', 'vencido']);
-
-        setHasPendingPayment(payments?.length > 0);
+        const { data: credits, error: balanceError } = await supabase.rpc('acolher_booking_balance');
+        setBalance(balanceError ? null : credits);
       }
     } catch (error) {
       console.error('Error fetching sessions:', error);
@@ -83,10 +82,11 @@ export default function AgendaPage() {
   }, [user, year, month, fetchSessions, fetchAvailability]);
 
   const handleRequestSession = () => {
-    if (hasPendingPayment) {
-      addToast('Você possui faturas pendentes. Regularize seu financeiro para agendar novas sessões.', 'warning');
+    if (!balance) {
+      addToast(balance === null ? 'A agenda precisa de conferência da clínica. Tente novamente mais tarde.' : 'Confirme o pagamento em Pagamentos para liberar seu saldo de sessões.', 'warning');
       return;
     }
+    setSelectedDate(null); setSelectedTime(null); setSelectedModality(null); setBookedSlots([]); slotsRequest.current++;
     setIsModalOpen(true);
   };
 
@@ -104,78 +104,29 @@ export default function AgendaPage() {
   const getSessionsForDay = (day) => {
     if (!day) return [];
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return sessions.filter(s => { const d = new Date(s.data); return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day; });
+    return sessions.filter(s => clinicDate(s.data) === dateStr);
   };
 
   const getAvailableTimesForDate = (date) => {
     if (!date) return [];
-    const dayOfWeek = weekDays[date.getDay()];
+    const dayOfWeek = weekDays[new Date(clinicDate(date) + 'T12:00:00Z').getUTCDay()];
     const dayAvailability = availability.find(a => a.dia_semana === dayOfWeek);
     if (!dayAvailability) return [];
 
     // Filter out booked slots
-    return dayAvailability.horarios.filter(slot => !bookedSlots.includes(slot));
+    return (Array.isArray(dayAvailability.horarios) ? dayAvailability.horarios : []).filter(slot => !bookedSlots.includes(slot) && new Date(clinicSlot(clinicDate(date), slot)).getTime() > Date.now());
   };
 
   const handleConfirmRequest = async () => {
     if (!selectedDate || !selectedTime || !selectedModality || requesting) return;
     setRequesting(true);
     try {
-      const { data: patient, error: patientError } = await supabase
-        .from('pacientes')
-        .select('id, planos(nome, limite_sessoes)')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (patientError || !patient) {
-        throw new Error('Não foi possível identificar sua ficha de paciente. Entre em contato com a clínica.');
-      }
-
-      // Formata a data e hora
-      const sessionDate = new Date(selectedDate);
-      const [hours, minutes] = selectedTime.split(':');
-      sessionDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
-      // Validação do Limite de Sessões no mês correspondente
-      const reqYear = sessionDate.getFullYear();
-      const reqMonth = sessionDate.getMonth();
-      const reqStartOfMonth = new Date(reqYear, reqMonth, 1).toISOString();
-      const reqEndOfMonth = new Date(reqYear, reqMonth + 1, 0, 23, 59, 59).toISOString();
-
-      const { data: monthSessions, error: countError } = await supabase
-        .from('sessoes')
-        .select('id')
-        .eq('paciente_id', patient.id)
-        .gte('data', reqStartOfMonth)
-        .lte('data', reqEndOfMonth)
-        .neq('status', 'cancelada');
-
-      if (countError) throw countError;
-
-      const monthSessionsCount = monthSessions?.length || 0;
-      if (!patient.planos) throw new Error('Escolha um plano ou entre em contato com a clínica para agendar.');
-      const limit = patient.planos.limite_sessoes; // Padrão de 4 se não houver plano configurado
-
-      console.log(`[Session Limit Validation] Month: ${monthNames[reqMonth]}, Limit: ${limit}, Scheduled: ${monthSessionsCount}`);
-
-      if (monthSessionsCount >= limit) {
-        // Disparar notificação e mensagem de WhatsApp via Evolution API alertando o paciente
-
-        throw new Error(`Você atingiu o limite de ${limit} sessões para este mês (${monthNames[reqMonth]}). Atualmente você possui ${monthSessionsCount} sessões ativas. Para agendar mais, adquira uma sessão avulsa ou faça o upgrade do seu plano.`);
-      }
-
-      const { error } = await supabase
-        .from('sessoes')
-        .insert({
-          paciente_id: patient.id,
-          data: sessionDate.toISOString(),
-          status: 'pendente',
-          observacoes: `Modalidade: ${selectedModality === 'online' ? 'Online' : 'Presencial'} | Solicitado via Portal do Paciente`
-        });
-
-      if (error) throw error;
-
-      // Disparar notificação de sucesso para o próprio paciente
+      const response = await fetch('/api/appointments', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: clinicDate(selectedDate), time: selectedTime, modality: selectedModality }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Não foi possível solicitar o horário.');
 
       addToast('Solicitação enviada! Aguarde a confirmação da clínica.', 'success');
       setIsModalOpen(false);
@@ -214,6 +165,7 @@ export default function AgendaPage() {
         </Button>
       </div>
 
+      <p>{balance === null ? 'Não foi possível verificar seu saldo de sessões.' : 'Saldo de sessões pagas: ' + balance + '.'} <Link href="/dashboard/paciente/pagamentos">Ver pagamentos</Link></p>
       <div className={styles.calendarContainer}>
         <div className={styles.calHeader}>
           <h2>{monthNames[month]} {year}</h2>
@@ -250,7 +202,7 @@ export default function AgendaPage() {
                 <div className={styles.sessionContainer}>
                   {daySessions.map(s => (
                     <div key={s.id} className={styles.sessionTag} style={{borderLeft: `3px solid ${getStatusColor(s.status)}`}}>
-                      {new Date(s.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
+                      {new Date(s.data).toLocaleTimeString('pt-BR', {timeZone: 'America/Sao_Paulo', hour: '2-digit', minute:'2-digit'})}
                     </div>
                   ))}
                 </div>
@@ -294,26 +246,17 @@ export default function AgendaPage() {
                 <label>Selecione a Data</label>
                 <input
                   type="date"
-                  min={new Date().toISOString().split('T')[0]}
+                  min={clinicDate()}
                   onChange={async (e) => {
+                    const requestId = ++slotsRequest.current;
                     const dateStr = e.target.value;
-                    const dateObj = new Date(dateStr + 'T12:00:00');
-                    setSelectedDate(dateObj);
-                    setSelectedTime(null);
-                    setSelectedModality(null);
-
-                    // Fetch all booked slots for this day
-                    const startOfDay = new Date(dateStr + 'T00:00:00').toISOString();
-                    const endOfDay = new Date(dateStr + 'T23:59:59').toISOString();
-
+                    setSelectedDate(null); setSelectedTime(null); setSelectedModality(null); setBookedSlots([]);
+                    if (!dateStr) return;
                     const { data: booked, error: bookedError } = await supabase.rpc('booked_session_slots', { p_day: dateStr });
+                    if (requestId !== slotsRequest.current) return;
                     if (bookedError) { addToast('Não foi possível consultar os horários. Tente novamente.', 'error'); return; }
-
-                    const times = booked?.map(s => {
-                      const d = new Date(s.data);
-                      return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                    }) || [];
-
+                    const times = (booked || []).map(s => new Date(s.data).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }));
+                    setSelectedDate(new Date(dateStr + 'T12:00:00-03:00'));
                     setBookedSlots(times);
                   }}
                 />
@@ -321,7 +264,7 @@ export default function AgendaPage() {
 
               {selectedDate && (
                 <div className={styles.timeSection}>
-                  <label>Horários Disponíveis para {weekDays[selectedDate.getDay()]}</label>
+                  <label>Horários Disponíveis para {weekDays[new Date(clinicDate(selectedDate) + 'T12:00:00Z').getUTCDay()]}</label>
                   <div className={styles.timeGrid}>
                     {getAvailableTimesForDate(selectedDate).length > 0 ? (
                       getAvailableTimesForDate(selectedDate).map(time => (
@@ -387,7 +330,7 @@ export default function AgendaPage() {
                   <div key={s.id} className={styles.detailItem}>
                     <div className={styles.detailTime}>
                       <Clock size={16} />
-                      <span>{new Date(s.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</span>
+                      <span>{new Date(s.data).toLocaleTimeString('pt-BR', {timeZone: 'America/Sao_Paulo', hour: '2-digit', minute:'2-digit'})}</span>
                     </div>
                     <div className={styles.detailStatus}>
                       <span className={styles.statusBadge} style={{backgroundColor: getStatusColor(s.status)}}>

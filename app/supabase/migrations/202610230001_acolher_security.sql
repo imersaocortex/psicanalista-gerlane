@@ -30,6 +30,12 @@ create table if not exists public.pagamentos (
  data timestamptz not null default now(), gateway_id text, created_at timestamptz default now()
 );
 alter table public.pagamentos add column if not exists plano_id uuid references public.planos(id);
+alter table public.pagamentos add column if not exists gateway_id text;
+alter table public.pagamentos drop constraint if exists pagamentos_status_check;
+alter table public.pagamentos add constraint pagamentos_status_check check(status in ('pendente','processando','pago','vencido','cancelado'));
+alter table public.pagamentos drop constraint if exists pagamentos_tipo_plano_check;
+alter table public.pagamentos add constraint pagamentos_tipo_plano_check check(tipo_plano in ('avulso','mensal','trimestral','semestral','anual'));
+create unique index if not exists acolher_patient_user on public.pacientes(user_id);
 alter table public.pagamentos add column if not exists gateway_payment_id text;
 create unique index if not exists acolher_gateway_payment_id on public.pagamentos(gateway_payment_id) where gateway_payment_id is not null;
 create unique index if not exists acolher_one_pending_plan on public.pagamentos(paciente_id,plano_id) where plano_id is not null and status in ('pendente','processando');
@@ -208,14 +214,23 @@ begin
  insert into public.pacientes(user_id) values(new.id) on conflict(user_id) do nothing;
  return new;
 end $$;
-do $
+do $$
 declare item record;
 begin
  for item in select t.tgname from pg_trigger t join pg_proc p on p.oid=t.tgfoid where t.tgrelid='auth.users'::regclass and not t.tgisinternal and p.proname in ('handle_new_user','acolher_handle_new_user') loop
   execute format('drop trigger %I on auth.users',item.tgname);
  end loop;
-end $;
+end $$;
 create trigger acolher_new_user after insert on auth.users for each row execute function public.handle_new_user();
+-- Trigger helpers must not provide an anonymous notification-writing RPC.
+do $$
+declare item record;
+begin
+ for item in select p.oid::regprocedure as signature from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname in ('create_notification','notify_session_change','notify_payment_change','notify_anamnesis_change','notify_prontuario_change','handle_new_user','notify_new_message','delete_patient_user_cascade') loop
+  execute format('revoke all on function %s from public,anon,authenticated',item.signature);
+  if item.signature::text not like 'handle_new_user(%' then execute format('alter function %s set search_path=public,pg_temp',item.signature); end if;
+ end loop;
+end $$;
 -- Existing application signup triggers must be reviewed for compatibility before applying.
 
 create or replace function public.acolher_validate_session() returns trigger language plpgsql security definer set search_path='' as $$

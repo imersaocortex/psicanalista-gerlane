@@ -16,6 +16,7 @@ export default function NovoPagamentoPage() {
   const [formData, setFormData] = useState({
     paciente_id: '',
     tipo_plano: 'avulso',
+    sessoes_contratadas: 1,
     valor: '',
     status: 'pendente',
     data: new Date().toISOString().split('T')[0]
@@ -29,7 +30,7 @@ export default function NovoPagamentoPage() {
     async function fetchPatients() {
       const { data } = await supabase
         .from('pacientes')
-        .select('id, profiles(nome)')
+        .select('id, profiles:user_id(nome)')
         .eq('status', 'ativo');
 
       setPatients(data || []);
@@ -55,6 +56,7 @@ export default function NovoPagamentoPage() {
         .insert({
           paciente_id: formData.paciente_id,
           tipo_plano: formData.tipo_plano,
+          sessoes_contratadas: formData.tipo_plano === 'avulso' ? 1 : Number(formData.sessoes_contratadas),
           valor: parseFloat(formData.valor),
           status: formData.status,
           data: new Date(formData.data).toISOString()
@@ -154,6 +156,11 @@ export default function NovoPagamentoPage() {
             </div>
           </div>
 
+          <div className={styles.formGroup}>
+            <label>Quantidade de sessões cobertas por esta fatura</label>
+            <input className={styles.input} type="number" min="1" max="1000" required disabled={formData.tipo_plano === 'avulso'} value={formData.tipo_plano === 'avulso' ? 1 : formData.sessoes_contratadas} onChange={e => setFormData({ ...formData, sessoes_contratadas: e.target.value })} />
+            <p>A agenda será liberada somente após a confirmação do pagamento.</p>
+          </div>
           <div className={styles.footer}>
             <Button type="submit" disabled={saving}>
               {saving ? 'Gerando...' : <><Save size={16} /> Gerar Lançamento</>}

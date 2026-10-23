@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { configValue } from '@/lib/config.mjs';
 import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -13,6 +14,8 @@ export default function FinanceiroConfigPage() {
   const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [health, setHealth] = useState(null);
   const [supabase] = useState(() => createClient());
 
   const [config, setConfig] = useState({
@@ -33,7 +36,7 @@ export default function FinanceiroConfigPage() {
 
       const mapped = {};
       data?.forEach(item => {
-        try { mapped[item.chave] = typeof item.valor === 'string' ? JSON.parse(item.valor) : item.valor; } catch { mapped[item.chave] = item.valor; }
+        mapped[item.chave] = configValue(item.valor);
       });
 
       if (Object.keys(mapped).length > 0) {
@@ -47,6 +50,29 @@ export default function FinanceiroConfigPage() {
     fetchConfig();
   }, [supabase, user]);
 
+  const checkIntegration = async () => {
+    setChecking(true); setHealth(null);
+    try {
+      const response = await fetch('/api/payments/config', { cache: 'no-store' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Não foi possível conferir o Asaas.');
+      setHealth(result);
+    } catch (error) { addToast(error.message, 'error'); }
+    finally { setChecking(false); }
+  };
+
+  const configureWebhook = async () => {
+    setChecking(true);
+    try {
+      const response = await fetch('/api/payments/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'configureWebhook' }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Não foi possível configurar o webhook.');
+      addToast('Webhook do Asaas configurado.', 'success');
+      await checkIntegration();
+    } catch (error) { addToast(error.message, 'error'); }
+    finally { setChecking(false); }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -58,7 +84,7 @@ export default function FinanceiroConfigPage() {
           .upsert({
             admin_id: user.id,
             chave,
-            valor: JSON.stringify(valor),
+            valor,
             updated_at: new Date().toISOString()
           }, { onConflict: 'chave' });
 
@@ -90,6 +116,15 @@ export default function FinanceiroConfigPage() {
         </div>
       </div>
 
+      <section aria-live="polite" style={{ marginBottom: 24 }}>
+        <Button type="button" variant="outline" onClick={checkIntegration} disabled={checking}>{checking ? 'Conferindo...' : 'Conferir integração Asaas'}</Button>
+        <Button type="button" variant="outline" onClick={configureWebhook} disabled={checking}>Configurar webhook Asaas</Button>
+        {health && <div>
+          <p>Ambiente: {health.environment}. Chave Pix na conta Asaas: {health.matchingPix ? 'conferida' : 'não localizada; confira no Asaas'}.</p>
+          <p>Token do webhook: {health.webhookSecretConfigured ? 'configurado' : 'pendente na Vercel'}. Webhook: {health.webhookConfigured ? 'ativo' : 'pendente no Asaas'}.</p>
+          <p>Endereço do webhook: {health.webhookUrl}</p>
+        </div>}
+      </section>
       <form onSubmit={handleSave} className={styles.form}>
         <div className={styles.grid}>
           <div className={styles.section}>
@@ -122,7 +157,7 @@ export default function FinanceiroConfigPage() {
                 onChange={e => setConfig({...config, pix_key: e.target.value})}
                 placeholder="CPF, E-mail, Celular ou Chave Aleatória"
               />
-              <span className={styles.hint}>Será mostrada ao paciente ao finalizar um agendamento manual.</span>
+              <span className={styles.hint}>Cadastre a mesma chave na conta Asaas para receber cobranças com confirmação automática.</span>
             </div>
           </div>
         </div>
@@ -130,7 +165,7 @@ export default function FinanceiroConfigPage() {
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <Shield size={20} />
-            <h3>Integração com Gateway (Opcional)</h3>
+            <h3>Integração com Asaas</h3>
           </div>
           <p className={styles.sectionDesc}>
             Configure o Asaas para automação de Pix, Boletos e Cartão de Crédito.

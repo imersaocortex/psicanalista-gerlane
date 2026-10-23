@@ -23,7 +23,7 @@ Requer Node.js compatível com Next.js 16 e npm.
 
 ## Banco de dados e acesso
 
-**O deploy do código não aplica SQL automaticamente.** Antes de liberar o aplicativo, revise e aplique `supabase/migrations/202610230001_acolher_security.sql` em uma cópia de homologação do banco existente, depois em produção. Faça backup antes da migração. O esquema anterior não foi fornecido; diferenças de tipos, campos e triggers precisam ser conferidas no banco real. A transação preserva registros e não converte tipos de colunas existentes.
+**O deploy do código não aplica SQL automaticamente.** A produção recebeu as migrações restritas `acolher_paid_booking`, `acolher_legacy_payment_credits` e `acolher_payment_config_access`, após testes no PostgreSQL em esquema isolado. Os respectivos SQL estão nos arquivos 202610230002–202610230004. A migração ampla 202610230001 é uma referência para revisão separada e não foi aplicada em produção. Não execute todas as migrações indiscriminadamente no banco existente.
 
 A migração cria políticas RLS restritivas para isolar os pacientes, protege campos administrativos, valida agendamentos no banco e registra eventos de pagamento de forma transacional. Novos usuários são sempre pacientes; a função de cadastro ignora qualquer papel administrativo enviado pelo cliente. Revise triggers anteriores de `auth.users`: a migração substitui os vinculados a `handle_new_user` e `acolher_handle_new_user`, mas outras funções de provisionamento precisam ser analisadas. Os administradores existentes não são promovidos ou rebaixados pela migração.
 
@@ -52,6 +52,7 @@ Novos anexos de anamnese utilizam o bucket privado `clinica_documentos` e links 
 
 ## Verificações
 
+- `npm run test:billing`
 - `npm run lint`
 - `npm run build`
 - Com o servidor local ativo: `npm run test:security`
@@ -69,3 +70,16 @@ O repositório está associado ao Vercel. Enviar a branch configurada dispara o 
 - [Supabase: Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
 - [Asaas: autenticação e entrega de webhooks](https://docs.asaas.com/docs/receba-eventos-do-asaas-no-seu-endpoint-de-webhook)
 - Next.js: guias da versão instalada em node_modules/next/dist/docs.
+
+
+## Cobrança e agendamento
+
+Cada reserva ativa aponta para uma fatura paga e consome uma sessão do saldo dessa fatura. Sessão avulsa concede uma consulta; planos usam o limite de sessões por ciclo configurado no cadastro do plano. Não foi criada validade adicional para os créditos. O banco verifica o saldo, a propriedade do paciente e a disponibilidade em uma transação; usuários não podem forjar faturas pagas nem promover o próprio perfil.
+
+Pix está disponível por QR Code e copia e cola do Asaas. Faturas pendentes, em processamento e vencidas podem ser retomadas. Gerar um QR Code ou voltar do checkout não confirma o pagamento. O botão de verificação e o webhook consultam o estado atual no Asaas; Pix em análise não libera agenda. Estornos e chargebacks bloqueiam créditos e cancelam reservas futuras vinculadas.
+
+No financeiro administrativo, use Conferir saldo para conciliar pagamentos antigos com histórico de sessões ou faturas manuais. Informe apenas as sessões ainda não utilizadas nem reservadas. O ajuste exige justificativa e gera auditoria. Não exclua bloqueios de checkout após falhas de rede: o sistema recupera cobranças existentes pelo identificador externo, evitando emissão duplicada.
+
+Em Configurações de Pagamento, use Conferir integração Asaas para validar a chave Pix e o webhook e Configurar webhook Asaas para registrar os eventos no endereço público. A variável ASAAS_WEBHOOK_TOKEN deve estar configurada na Vercel. A chave Pix salva deve pertencer à conta Asaas usada pela integração; uma transferência para outra instituição não gera confirmação automática no Asaas.
+
+Os testes em tests/billing.test.mjs usam provedores simulados, sem cobranças reais. tests/billing-database.sql foi executado em esquema isolado com cópias apenas da estrutura das tabelas; o esquema foi removido ao concluir. Nenhum teste cria faturas ou agenda consultas reais.

@@ -7,6 +7,7 @@ import styles from './agendaNovo.module.css';
 import Button from '@/components/ui/Button';
 import { Calendar, Clock, User, ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
+import { clinicDate, clinicSlot } from '@/lib/billing.mjs';
 
 const daysMapping = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
@@ -36,7 +37,7 @@ export default function NovoAgendamentoPage() {
       // Fetch patients
       const { data: pData } = await supabase
         .from('pacientes')
-        .select('id, user_id, profiles(nome)')
+        .select('id, user_id, profiles:user_id(nome)')
         .eq('status', 'ativo');
 
       setPatients(pData || []);
@@ -65,30 +66,23 @@ export default function NovoAgendamentoPage() {
     async function fetchBookedAndFilter() {
       if (!formData.data) return;
 
-      const dateObj = new Date(formData.data + 'T00:00:00');
-      const dayName = daysMapping[dateObj.getDay()];
+      const dateObj = new Date(formData.data + 'T12:00:00Z');
+      const dayName = daysMapping[dateObj.getUTCDay()];
       const baseSlots = availability[dayName] || [];
 
       // Fetch existing sessions for this date
-      const startOfDay = new Date(formData.data + 'T00:00:00').toISOString();
-      const endOfDay = new Date(formData.data + 'T23:59:59').toISOString();
-
-      const { data: bookedData } = await supabase
-        .from('sessoes')
-        .select('data')
-        .gte('data', startOfDay)
-        .lte('data', endOfDay)
-        .neq('status', 'cancelada');
+      const { data: bookedData, error: slotsError } = await supabase.rpc('booked_session_slots', { p_day: formData.data });
+      if (slotsError) { setAvailableSlots([]); setFormData(prev => ({ ...prev, hora: '' })); addToast('Não foi possível consultar a agenda.', 'error'); return; }
 
       const bookedTimes = bookedData?.map(s => {
         const d = new Date(s.data);
-        return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        return d.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
       }) || [];
 
       setBookedSlots(bookedTimes);
 
       // Filter baseSlots to exclude bookedTimes
-      const filtered = baseSlots.filter(slot => !bookedTimes.includes(slot));
+      const filtered = (Array.isArray(baseSlots) ? baseSlots : []).filter(slot => !bookedTimes.includes(slot) && new Date(clinicSlot(formData.data, slot)).getTime()>Date.now());
       setAvailableSlots(filtered);
 
       // Reset selected hour if it's not in the new slots
@@ -96,7 +90,7 @@ export default function NovoAgendamentoPage() {
     }
 
     fetchBookedAndFilter();
-  }, [formData.data, availability, supabase]);
+  }, [formData.data, availability, supabase, addToast]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -107,7 +101,7 @@ export default function NovoAgendamentoPage() {
 
     setSaving(true);
     try {
-      const sessionDate = new Date(`${formData.data}T${formData.hora}:00`);
+      const sessionDate = new Date(clinicSlot(formData.data, formData.hora));
 
       const { error } = await supabase
         .from('sessoes')
@@ -138,7 +132,7 @@ export default function NovoAgendamentoPage() {
       router.push('/dashboard/admin/agenda');
     } catch (error) {
       console.error('Error saving session:', error);
-      addToast('Erro ao agendar sessão. Verifique se o horário está disponível.', 'error');
+      addToast(error.message || 'Verifique o pagamento e a disponibilidade do horário.', 'error');
     } finally {
       setSaving(false);
     }

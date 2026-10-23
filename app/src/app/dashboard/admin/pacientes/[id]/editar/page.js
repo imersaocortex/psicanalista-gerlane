@@ -238,6 +238,7 @@ export default function EditarPacientePage() {
           await supabase.from('pagamentos').insert({
             paciente_id: id,
             valor: selectedPlan.preco,
+            plano_id: selectedPlan.id,
             tipo_plano: selectedPlan.periodicidade || 'avulso',
             status: paymentStatus,
             data: new Date().toISOString()

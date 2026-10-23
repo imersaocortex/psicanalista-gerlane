@@ -3,6 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { configValue } from '../config.mjs';
 
 export class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -62,8 +63,6 @@ export async function systemConfig(db, keys) {
   const { data, error } = await query;
   if (error) throw new HttpError(503, 'Não foi possível carregar a configuração da integração.');
   return Object.fromEntries((data || []).map(({ chave, valor }) => {
-    let parsed = valor;
-    try { if (typeof valor === 'string') parsed = JSON.parse(valor); } catch { /* Plain strings are supported. */ }
-    return [chave, parsed];
+    return [chave, configValue(valor)];
   }));
 }

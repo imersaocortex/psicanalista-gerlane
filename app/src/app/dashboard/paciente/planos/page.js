@@ -56,22 +56,14 @@ export default function PacientePlanos() {
   }, [supabase, user]);
 
   const handlePlanChange = async (plan) => {
-    if (plan.id === currentPlanId || changing) return;
+    if (changing) return;
 
     setChanging(plan.id);
     try {
       const planResponse = await fetch('/api/payments/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId: plan.id }) });
       const planResult = await planResponse.json();
       if (!planResponse.ok) throw new Error(planResult.error || 'Não foi possível preparar o plano.');
-      const response = await fetch('/api/payments/asaas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentId: planResult.paymentId }) });
-      const result = await response.json();
-
-      if (result.invoiceUrl) {
-        addToast('Redirecionando para o pagamento do novo plano...', 'success');
-        window.location.assign(result.invoiceUrl);
-      } else {
-        throw new Error(result.error || 'Erro ao gerar pagamento');
-      }
+      window.location.assign('/dashboard/paciente/pagamentos');
     } catch (error) {
       addToast(error.message || 'Erro ao processar troca de plano', 'error');
     } finally {
@@ -114,7 +106,7 @@ export default function PacientePlanos() {
             <div className={styles.features}>
               <div className={styles.feature}>
                 <CheckCircle2 size={16} color="var(--color-green)" />
-                <span>Consultas semanais</span>
+                <span>{plan.periodicidade === 'avulso' ? '1 consulta' : plan.limite_sessoes + ' consultas por ciclo contratado'}</span>
               </div>
               <div className={styles.feature}>
                 <CheckCircle2 size={16} color="var(--color-green)" />
@@ -127,21 +119,9 @@ export default function PacientePlanos() {
             </div>
 
             <div className={styles.actions}>
-              {plan.id === currentPlanId ? (
-                <Button variant="outline" disabled style={{ width: '100%', opacity: 0.7 }}>
-                  Plano Ativo
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => handlePlanChange(plan)}
-                  disabled={changing === plan.id}
-                  style={{ width: '100%' }}
-                >
-                  {changing === plan.id ? 'Processando...' : (
-                    <>Mudar para este plano <ArrowRight size={16} /></>
-                  )}
-                </Button>
-              )}
+              <Button onClick={() => handlePlanChange(plan)} disabled={!!changing} style={{ width: '100%' }}>
+                {changing === plan.id ? 'Processando...' : <>Contratar / ver fatura <ArrowRight size={16} /></>}
+              </Button>
             </div>
           </div>
         ))}

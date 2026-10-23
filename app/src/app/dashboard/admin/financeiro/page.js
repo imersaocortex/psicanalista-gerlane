@@ -51,6 +51,18 @@ export default function FinanceiroPage() {
     fetchPayments();
   }, [supabase]);
 
+  const handleReconcile = async payment => {
+    const input = window.prompt('Confira o pagamento e todas as consultas já utilizadas. Quantas sessões ainda RESTAM nesta fatura? Não inclua sessões já realizadas ou reservadas.');
+    if (input === null) return;
+    if (!/^\d+$/.test(input) || Number(input) > 1000) { addToast('Informe um saldo inteiro entre 0 e 1000.', 'error'); return; }
+    const reason = window.prompt('Registre como o pagamento e o saldo foram conferidos (mínimo de 10 caracteres):');
+    if (!reason || reason.trim().length < 10) { addToast('Informe a justificativa da conferência.', 'warning'); return; }
+    const { data, error } = await supabase.rpc('acolher_reconcile_credits', { p_payment: payment.id, p_remaining: Number(input), p_reason: reason });
+    if (error) { addToast(error.message || 'Não foi possível conferir o saldo.', 'error'); return; }
+    setPayments(previous => previous.map(p => p.id === payment.id ? { ...p, sessoes_contratadas: data } : p));
+    addToast('Saldo conferido e registrado no histórico de auditoria.', 'success');
+  };
+
   const handleDelete = async (id) => {
     if (!confirm('Tem certeza que deseja excluir esta fatura do paciente?')) return;
 
@@ -66,8 +78,8 @@ export default function FinanceiroPage() {
     }
   };
 
-  const totalRevenue = payments.filter(p => p.status === 'pago').reduce((s, p) => s + (p.valor || 0), 0);
-  const totalPending = payments.filter(p => p.status === 'pendente').reduce((s, p) => s + (p.valor || 0), 0);
+  const totalRevenue = payments.filter(p => p.status === 'pago').reduce((s, p) => s + Number(p.valor || 0), 0);
+  const totalPending = payments.filter(p => ['pendente','processando','vencido'].includes(p.status)).reduce((s, p) => s + Number(p.valor || 0), 0);
   const paidCount = payments.filter(p => p.status === 'pago').length;
 
   const filtered = filter === 'todos' ? payments : payments.filter(p => p.status === filter);
@@ -126,7 +138,7 @@ export default function FinanceiroPage() {
           </div>
           <div className={styles.filters}>
             <Filter size={14} color="var(--text-muted)" style={{marginRight:'8px'}} />
-            {['todos', 'pago', 'pendente', 'cancelado'].map(f => (
+            {['todos', 'pago', 'pendente', 'processando', 'vencido', 'cancelado'].map(f => (
               <button
                 key={f}
                 className={`${styles.filterBtn} ${filter === f ? styles.activeFilter : ''}`}
@@ -163,6 +175,7 @@ export default function FinanceiroPage() {
                     </span>
                   </td>
                   <td>
+                    {p.status === 'pago' && <Button size="sm" variant="outline" onClick={() => handleReconcile(p)}>Conferir saldo</Button>}
                     <button
                       onClick={() => handleDelete(p.id)}
                       title="Excluir Fatura"
@@ -175,7 +188,7 @@ export default function FinanceiroPage() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan="5" className={styles.emptyTable}>Nenhuma transação encontrada.</td>
+                  <td colSpan="6" className={styles.emptyTable}>Nenhuma transação encontrada.</td>
                 </tr>
               )}
             </tbody>

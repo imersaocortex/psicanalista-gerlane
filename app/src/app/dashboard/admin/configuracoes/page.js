@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { configValue } from '@/lib/config.mjs';
 import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -35,7 +36,7 @@ export default function ConfiguracoesAdminPage() {
         data.forEach(item => {
           try {
             // Remove as aspas extras se foi salvo como string JSON
-            configMap[item.chave] = JSON.parse(item.valor);
+            configMap[item.chave] = configValue(item.valor);
           } catch (e) {
             configMap[item.chave] = item.valor;
           }
@@ -66,7 +67,7 @@ export default function ConfiguracoesAdminPage() {
           .upsert({
             admin_id: user.id,
             chave,
-            valor: JSON.stringify(valor),
+            valor,
             updated_at: new Date().toISOString()
           }, { onConflict: 'chave' });
 

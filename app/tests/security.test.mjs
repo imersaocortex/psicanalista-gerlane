@@ -19,10 +19,11 @@ test('anonymous requests cannot access either dashboard', async () => {
  }
 });
 test('anonymous requests cannot send notifications, open documents or create payments', async () => {
- for (const path of ['/api/notifications','/api/payments/asaas','/api/payments/plan']) {
+ for (const path of ['/api/notifications','/api/payments/asaas','/api/payments/plan','/api/payments/status','/api/payments/config','/api/appointments']) {
   const r = await request(path, post({})); assert.equal(r.status,401);
  }
  assert.equal((await request('/api/documents?file=example-file')).status,401);
+ assert.equal((await request('/api/payments/config')).status,401);
 });
 test('cron and webhook fail closed without their configured secrets', async () => {
  const cron = await request('/api/cron/reminders');
