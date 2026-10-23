@@ -1,6 +1,4 @@
--- Prepared fix, not yet applied to production. No invoice/patient is deleted here.
--- The CLI is unavailable in this workspace; turn this reviewed SQL into a tracked
--- migration with `supabase migration new payment_deletion` before deployment.
+-- Invoice dependencies and atomic patient deletion. Does not delete existing data.
 begin;
 set local lock_timeout='5s';
 
@@ -43,13 +41,11 @@ begin
  delete from public.pagamentos where paciente_id=p_patient;
  delete from public.anamneses where paciente_id=p_patient;
  delete from public.prontuarios where paciente_id=p_patient;
- delete from public.mensagens where remetente_id=target_user or destinatario_id=target_user;
- delete from public.notificacoes where user_id=target_user;
+ -- Existing profile FKs anonymize messages and cascade notifications.
  delete from public.pacientes where id=p_patient;
- -- The existing patient deletion trigger removes the Auth user in this project.
- -- Removing a profile already deleted by that cascade is a harmless no-op.
- delete from public.profiles where id=target_user and tipo='paciente';
 end $$;
 revoke all on function public.acolher_delete_patient(uuid) from public,anon;
 grant execute on function public.acolher_delete_patient(uuid) to authenticated;
+-- The legacy Auth cleanup trigger runs inside the RPC's empty search_path.
+alter function public.delete_patient_user_cascade() set search_path=public,pg_temp;
 commit;
