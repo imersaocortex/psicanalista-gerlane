@@ -203,7 +203,8 @@
   animation: spin 0.8s linear infinite;
 }
 
-.appMark { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 12px; color: var(--color-green); border-radius: 22px; background: var(--color-mint); }
+.appMark { position: relative; width: 128px; height: 84px; margin: 0 auto 12px; overflow: hidden; }
+.lotusLogo { position: absolute; top: 0; left: 0; width: 380px; height: 83px; max-width: none; }
 .header .appName { font-family: 'Playfair Display', Georgia, serif; font-size: 3rem; font-weight: 500; }
 .header .slogan { color: var(--color-green); font-size: 0.95rem; }
 .header .professional { margin-top: 10px; font-size: 0.75rem; }

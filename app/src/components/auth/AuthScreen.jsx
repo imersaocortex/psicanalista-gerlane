@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Heart, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import InstallPWA from '@/components/ui/InstallPWA';
@@ -58,7 +58,7 @@ export default function AuthScreen({ mode = 'login' }) {
     <div className={styles.card}>
       <div className={styles.topBar}><Link href="/" className={styles.backLink}><ArrowLeft size={16} /> Site da Dra. Gerlane</Link></div>
       <header className={styles.header}>
-        <div className={styles.appMark}><Heart size={30} strokeWidth={1.7} aria-hidden="true" /></div>
+        <div className={styles.appMark}><Image src="/images/logo.png" width={380} height={83} alt="Flor de lótus da logomarca da Dra. Gerlane" className={styles.lotusLogo} loading="eager" /></div>
         <h1 className={styles.appName}>Acolher</h1><p className={styles.slogan}>Seu bem-estar em um só lugar</p>
         <p className={styles.professional}>Dra. Gerlane Albuquerque · Psicanalista</p>
       </header>
