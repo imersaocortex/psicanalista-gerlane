@@ -1,5 +1,5 @@
-const CACHE_NAME = 'acolher-static-v2';
-const STATIC_FILES = ['/offline.html', '/images/acolher-192.png', '/images/acolher-512.png'];
+const CACHE_NAME = 'acolher-static-v3';
+const STATIC_FILES = ['/offline.html', '/images/acolher-lotus-192.png', '/images/acolher-lotus-512.png'];
 self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_FILES))); self.skipWaiting(); });
 self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('portal-') || key.startsWith('acolher-') && key !== CACHE_NAME).map(key => caches.delete(key))))); self.clients.claim(); });
 self.addEventListener('fetch', event => {
