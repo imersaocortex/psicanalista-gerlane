@@ -30,6 +30,7 @@ export default function AnamneseAdminPage() {
   const [arquivos, setArquivos] = useState([]);
   const [uploading, setUploading] = useState(false);
   const uploadInProgress = useRef(false);
+  const saveInProgress = useRef(false);
 
   const [supabase] = useState(() => createClient());
 
@@ -91,11 +92,12 @@ export default function AnamneseAdminPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (saving) return;
+    if (saveInProgress.current) return;
     if (uploadInProgress.current) {
       addToast('Aguarde o envio do arquivo antes de salvar a anamnese.', 'warning');
       return;
     }
+    saveInProgress.current = true;
     setSaving(true);
     try {
       const { queixa_principal, ...respostas } = formData;
@@ -108,52 +110,43 @@ export default function AnamneseAdminPage() {
         .maybeSingle();
 
       let error;
+      let saved;
       if (existing) {
-        const { error: e } = await supabase
+        const { data, error: e } = await supabase
           .from('anamneses')
           .update({
             queixa_principal,
             respostas,
             arquivos // Salva o array de arquivos
           })
-          .eq('id', existing.id);
+          .eq('id', existing.id).select('id').single();
+        saved = data;
         error = e;
       } else {
-        const { error: e } = await supabase
+        const { data, error: e } = await supabase
           .from('anamneses')
           .insert({
             paciente_id: id,
             queixa_principal,
             respostas,
             arquivos // Salva o array de arquivos
-          });
+          }).select('id').single();
+        saved = data;
         error = e;
       }
 
       if (error) throw error;
 
-      // Disparar notificação avisando da atualização do prontuário
-      if (patient?.user_id) {
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos de timeout para não travar o save
-
-          await fetch('/api/notifications', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: controller.signal,
-            body: JSON.stringify({
-              userId: patient.user_id,
-              telefone: patient.telefone,
-              title: 'Prontuário Atualizado',
-              message: `Olá ${patient.profiles?.nome?.split(' ')[0] || ''}, seu prontuário clínico foi atualizado pela Dra. Gerlane. Este é um registro seguro e confidencial do seu acompanhamento.`,
-              link: '/dashboard/paciente/prontuario'
-            })
-          });
-          clearTimeout(timeoutId);
-        } catch (err) {
-          console.error('Erro ao notificar anamnese:', err);
-        }
+      // The server derives the recipient and revision from the saved record.
+      try {
+        const response = await fetch('/api/notifications', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ anamneseId: saved.id })
+        });
+        const result = await response.json();
+        if (!response.ok || result.warning) addToast('Anamnese salva. O aviso por WhatsApp não foi confirmado.', 'warning');
+      } catch {
+        addToast('Anamnese salva. O aviso por WhatsApp não foi confirmado.', 'warning');
       }
 
       addToast('Anamnese salva com sucesso!', 'success');
@@ -161,6 +154,7 @@ export default function AnamneseAdminPage() {
     } catch (error) {
       addToast('Erro ao salvar anamnese.', 'error');
     } finally {
+      saveInProgress.current = false;
       setSaving(false);
     }
   };
