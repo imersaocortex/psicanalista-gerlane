@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test:security": "node --test tests/security.test.mjs",
     "test:billing": "node --test tests/billing.test.mjs",
-    "test:seo": "node --test tests/seo.test.mjs"
+    "test:seo": "node --test tests/seo.test.mjs",
+    "prebuild": "node --test tests/documents.test.mjs",
+    "test:documents": "node --test tests/documents.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
