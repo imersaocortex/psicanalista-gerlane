@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { DOCUMENT_ACCEPT, attachmentErrorMessage, uploadAnamneseAttachment } from '@/lib/anamnese-attachments.mjs';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useToast } from '@/context/ToastContext';
@@ -28,6 +29,7 @@ export default function AnamneseAdminPage() {
   });
   const [arquivos, setArquivos] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const uploadInProgress = useRef(false);
 
   const [supabase] = useState(() => createClient());
 
@@ -62,42 +64,23 @@ export default function AnamneseAdminPage() {
   }, [id, supabase]);
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024 || !['application/pdf', 'image/jpeg', 'image/png'].includes(file.type)) { addToast('Envie um PDF, JPG ou PNG de até 10 MB.', 'warning'); return; }
+    const file = e.currentTarget.files?.[0];
+    e.currentTarget.value = ''; // Also allow retrying a file rejected during validation.
+    if (!file || uploadInProgress.current || saving) return;
 
+    uploadInProgress.current = true;
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-      const filePath = `${id}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('clinica_documentos')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-
-
-      const newFile = {
-        id: crypto.randomUUID(),
-        name: file.name,
-        bucket: 'clinica_documentos',
-        path: filePath,
-        size: file.size,
-        type: file.type,
-        createdAt: new Date().toISOString()
-      };
-
-      setArquivos(prev => [...prev, newFile]);
-      addToast('Arquivo enviado!', 'success');
+      const newFile = await uploadAnamneseAttachment(supabase.storage, patient?.id, file);
+      setArquivos(previous => [...previous, newFile]);
+      addToast('Arquivo anexado à lista. Salve a anamnese para confirmar.', 'success');
     } catch (error) {
-      console.error('Upload error:', error);
-      addToast('Erro ao enviar arquivo.', 'error');
+      // Never include document names, contents, or signed URLs in logs.
+      console.error('Falha no anexo:', error?.statusCode || error?.name || 'UploadError');
+      addToast(attachmentErrorMessage(error), 'error');
     } finally {
+      uploadInProgress.current = false;
       setUploading(false);
-      e.target.value = ''; // Permite selecionar o mesmo arquivo novamente
     }
   };
 
@@ -108,6 +91,11 @@ export default function AnamneseAdminPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (saving) return;
+    if (uploadInProgress.current) {
+      addToast('Aguarde o envio do arquivo antes de salvar a anamnese.', 'warning');
+      return;
+    }
     setSaving(true);
     try {
       const { queixa_principal, ...respostas } = formData;
@@ -303,20 +291,26 @@ export default function AnamneseAdminPage() {
           </div>
 
           <div className={styles.uploadArea}>
-            <label className={styles.uploadLabel}>
+            <label htmlFor="anamnese-arquivo" className={styles.uploadLabel}>
               {uploading ? (
                 <><Loader2 size={24} className={styles.spin} /> Enviando...</>
               ) : (
-                <><FileUp size={24} /> Clique para anexar documentos (PDF, Exames, etc.)</>
+                <><FileUp size={24} /> Anexar documento (PDF, JPG ou PNG, até 10 MB)</>
               )}
               <input
+                id="anamnese-arquivo"
+                aria-label="Anexar documento à anamnese"
+                aria-describedby="anamnese-arquivo-ajuda"
+                accept={DOCUMENT_ACCEPT}
                 type="file"
                 onChange={handleFileUpload}
-                disabled={uploading}
+                disabled={uploading || saving || !patient}
                 hidden
               />
             </label>
           </div>
+
+          <p id="anamnese-arquivo-ajuda">Documentos privados. Após anexar, clique em “Salvar Anamnese no Prontuário” para confirmar e liberar o download.</p>
 
           <div className={styles.fileList}>
             {arquivos.map((file) => (
@@ -361,7 +355,7 @@ export default function AnamneseAdminPage() {
         </div>
 
         <div className={styles.footer}>
-          <Button type="submit" disabled={saving}>
+          <Button type="submit" disabled={saving || uploading}>
             {saving ? 'Salvando...' : <><Save size={16} /> Salvar Anamnese no Prontuário</>}
           </Button>
         </div>
